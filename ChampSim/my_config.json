@@ -1,0 +1,36 @@
+{
+  "num_cores": 1,
+  "ooo_cpu": [
+	{
+	  "frequency": 3000,
+	  "rob_size": 224,
+	  "scheduler_size": 96,
+	  "fetch_width": 6,
+	  "decode_width": 6,
+	  "dispatch_width": 6,
+	  "execute_width": 4,
+	  "retire_width": 6,
+	  "branch_predictor": "bimodal",
+	  "btb": "basic_btb"
+	}
+  ],
+  "L1I": {
+	"sets": 64,
+	"ways": 8,
+	"latency": 3
+  },
+  "L1D": {
+	"sets": 64,
+	"ways": 8,
+	"latency": 4
+  },
+  "LLC": {
+	"sets": 1024,
+	"ways": 16,
+	"latency": 36
+  },
+  "physical_memory": {
+	"data_rate": 2400,
+	"channels": 1
+  }
+}
