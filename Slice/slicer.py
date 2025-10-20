@@ -1,89 +1,68 @@
 import angr
 import sys
-
-# --- Configuration ---
-# 1. TODO: Accept binary path as a command-line argument
-BINARY_PATH = sys.argv[1] if len(sys.argv) > 1 else None
-# 2. TODO: Accept target load address as a command-line argument
-TARGET_LOAD_ADDR = int(sys.argv[2], 16) if len(sys.argv) > 2 else None
-TARGET_LOAD_ADDR = 0x401b60  # 2. TODO: Change this to your delinquent load address
+import lief
 
 def main():
-    if not BINARY_PATH or not TARGET_LOAD_ADDR:
-        print("Please set BINARY_PATH and TARGET_LOAD_ADDR in the script.")
+    if len(sys.argv) < 3:
+        print("Usage: python3 slicer.py <binary> <target_runtime_addr>")
         return
 
+    BINARY_PATH = sys.argv[1]
+    TARGET_RUNTIME_ADDR = int(sys.argv[2], 16)
+
     print(f"[*] Loading binary: {BINARY_PATH}")
-    # auto_load_libs=False makes it faster by not loading shared libraries
     proj = angr.Project(BINARY_PATH, auto_load_libs=False)
 
-    # === Step 1: Build the Control Flow Graph (CFG) ===
-    # We use CFGEmulated for accuracy. This is the key part:
-    # - keep_state=True: Saves the state at the end of each block.
-    # - state_add_options=angr.sim_options.refs: This is CRITICAL.
-    #   It tells angr to record all register and memory accesses (refs),
-    #   which is necessary for building an accurate Data Dependence Graph.
-    print("[*] Building accurate Control Flow Graph (CFG). This may take time...")
+    # === Detect PIE and compute static offset ===
+    binary = lief.parse(BINARY_PATH)
+    base_addr = 0
+
+    if binary.is_pie:
+        base_addr = proj.loader.main_object.mapped_base
+        print(f"[*] Detected PIE binary. Base load address: {hex(base_addr)}")
+    else:
+        print("[*] Non-PIE binary detected (fixed base address).")
+
+    TARGET_STATIC_ADDR = TARGET_RUNTIME_ADDR - base_addr
+    print(f"[*] Runtime address: {hex(TARGET_RUNTIME_ADDR)} → Adjusted static address: {hex(TARGET_STATIC_ADDR)}")
+
+    # === Step 1: Build CFG ===
+    print("[*] Building Control Flow Graph (CFG)...")
     cfg = proj.analyses.CFGEmulated(
         keep_state=True,
         state_add_options=angr.sim_options.refs,
-        context_sensitivity_level=2  # A good default
+        context_sensitivity_level=2
     )
     print("[*] CFG build complete.")
 
-    # === Step 2: Build Dependence Graphs (CDG & DDG) ===
-    # These graphs are built on top of the CFG.
+    # === Step 2: Build Dependence Graphs ===
     print("[*] Building Control Dependence Graph (CDG)...")
     cdg = proj.analyses.CDG(cfg)
-    print("[*] Building Data Dependence Graph (DDG). This is the slow part...")
+    print("[*] Building Data Dependence Graph (DDG)...")
     ddg = proj.analyses.DDG(cfg)
     print("[*] Dependence graphs complete.")
 
-    # === Step 3: Find the Slicing Target ===
-    # We need to find the *exact statement* in the VEX IR (angr's intermediate
-    # representation) that corresponds to our assembly instruction.
-    
-    # First, find the CFG node that contains our target address
-    target_node = cfg.model.get_any_node(TARGET_LOAD_ADDR)
+    # === Step 3: Find the target node and statement ===
+    target_node = cfg.model.get_any_node(TARGET_STATIC_ADDR)
     if target_node is None:
-        print(f"[!] Could not find CFG node for address {hex(TARGET_LOAD_ADDR)}")
+        print(f"[!] Could not find CFG node for address {hex(TARGET_STATIC_ADDR)}")
         return
 
-    # Now, find the *statement index* within that block.
-    # We iterate through the VEX statements and find the 'IMark' (Instruction Mark)
-    # that matches our address. The actual load (e.g., 'LDle') will follow it.
-    # We slice from the *end* of the instruction, so we find the *last* VEX
-    # statement that belongs to our assembly instruction.
-    
     stmt_idx = -1
     block = proj.factory.block(target_node.addr, size=target_node.size)
-    
-    # Find the VEX statement index for our specific instruction
     for i, stmt in enumerate(block.vex.statements):
-        if stmt.tag == 'Ist_IMark':
-            if stmt.addr == TARGET_LOAD_ADDR:
-                stmt_idx = i
-                
-    # If our load isn't the last instruction, find its end
-    if stmt_idx != -1:
-        # Find the *next* IMark to get the range of statements for our instruction
-        for i in range(stmt_idx + 1, len(block.vex.statements)):
-            if block.vex.statements[i].tag == 'Ist_IMark':
-                stmt_idx = i - 1 # Target the statement just *before* the next instruction
-                break
-        else:
-            # It's the last instruction, so target the end of the block
-            stmt_idx = len(block.vex.statements) - 1
+        if stmt.tag == 'Ist_IMark' and stmt.addr == TARGET_STATIC_ADDR:
+            stmt_idx = i
+            break
 
     if stmt_idx == -1:
-        print(f"[!] Could not find statement for {hex(TARGET_LOAD_ADDR)} in block.")
+        print(f"[!] Could not find statement for {hex(TARGET_STATIC_ADDR)} in block.")
         return
 
-    print(f"[*] Found target: Node {hex(target_node.addr)}, Stmt Index {stmt_idx}")
+    print(f"[*] Found target node at {hex(target_node.addr)}, stmt index {stmt_idx}")
 
-    # === Step 4: Run the Backward Slice ===
+    # === Step 4: Backward Slice ===
     print("[*] Running backward slice...")
-    # The 'targets' list is a tuple of (CFGNode, statement_index)
     bs = proj.analyses.BackwardSlice(
         cfg,
         cdg=cdg,
@@ -92,26 +71,15 @@ def main():
     )
     print("[*] Slice complete.")
 
-    # === Step 5: Print the Results ===
-    # The result 'bs.chosen_statements' is a dict of:
-    # { block_address: [list_of_critical_statement_indices] }
-    
-    # For a user-friendly view, we'll just print all assembly blocks
-    # that contain *any* critical statements.
-    
-    print("\n" + "="*30)
+    # === Step 5: Display slice ===
+    print("\n" + "=" * 30)
     print("      CRITICAL SLICE BLOCKS")
-    print("="*30)
+    print("=" * 30)
 
-    # Get all unique block addresses from the slice
-    slice_block_addrs = sorted(bs.chosen_statements.keys())
-
-    for addr in slice_block_addrs:
+    for addr in sorted(bs.chosen_statements.keys()):
         print(f"\n--- Block at {hex(addr)} ---")
-        # Lift the block again, this time to print its disassembly
         try:
-            block = proj.factory.block(addr)
-            block.capstone.pp()  # .pp() pretty-prints the Capstone disassembly
+            proj.factory.block(addr).capstone.pp()
         except Exception as e:
             print(f"Could not disassemble block: {e}")
 

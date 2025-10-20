@@ -21,7 +21,7 @@ sudo /opt/intel/oneapi/vtune/latest/bin64/vtune -collect memory-access \
     -- taskset -c 0-5 ./$binary
 
 # Generate report from vtune results
-sudo /opt/intel/oneapi/vtune/latest/bin64/vtune -report hotspots -r ./memacc -group-by address -format csv -report-output loads.csv
+sudo /opt/intel/oneapi/vtune/latest/bin64/vtune -report hotspots -r ./memacc -group-by address -format csv -report-output loads.csv --filter module=reverseLinkedList
 sudo rm -rf ./memacc
 
 if command -v python3 &>/dev/null; then
@@ -30,4 +30,7 @@ else
     python data.py
 fi
 
-rm loads.csv
+sudo rm loads.csv
+sudo mv loads_cleaned_sorted.csv loads.csv
+
+./slice.sh $binary
