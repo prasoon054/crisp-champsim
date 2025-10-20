@@ -7,7 +7,7 @@
 ```sh
 python -m venv angr-env
 source angr-env/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-{chipset}.txt
 ```
 
 ### Perf Setup

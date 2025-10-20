@@ -23,3 +23,11 @@ sudo /opt/intel/oneapi/vtune/latest/bin64/vtune -collect memory-access \
 # Generate report from vtune results
 sudo /opt/intel/oneapi/vtune/latest/bin64/vtune -report hotspots -r ./memacc -group-by address -format csv -report-output loads.csv
 sudo rm -rf ./memacc
+
+if command -v python3 &>/dev/null; then
+    python3 data.py
+else
+    python data.py
+fi
+
+rm loads.csv
