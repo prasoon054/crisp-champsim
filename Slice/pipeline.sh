@@ -22,3 +22,4 @@ sudo /opt/intel/oneapi/vtune/latest/bin64/vtune -collect memory-access \
 
 # Generate report from vtune results
 sudo /opt/intel/oneapi/vtune/latest/bin64/vtune -report hotspots -r ./memacc -group-by address -format csv -report-output loads.csv
+sudo rm -rf ./memacc

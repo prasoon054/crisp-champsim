@@ -5,8 +5,8 @@
 
 ### Angr Setup
 ```sh
-python -m venv angr
-source angr/bin/activate
+python -m venv angr-env
+source angr-env/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -43,7 +43,17 @@ sudo apt install linux-image-$(uname -r)-dbgsym
 - Activate vtune
 ```source /opt/intel/oneapi/setvars.sh```
 
-## Running perf
+## Running Various Tools
+
+### Running perf
 ```sh
 sudo perf mem record -t load -- ./reverseLinkedList
 ```
+
+### Running vtune vtune-profiler
+```./pipeline.sh```  
+This will generate the raw ```loads.csv```
+
+## Steps
+- Start angr venv ```source angr-env/bin/activate```
+

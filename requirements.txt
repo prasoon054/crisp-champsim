@@ -18,6 +18,7 @@ msgspec==0.19.0
 mulpyplexer==0.9
 networkx==3.5
 numpy==2.3.4
+pandas==4.3.3
 pefile==2024.8.26
 protobuf==6.33.0
 psutil==7.1.0
