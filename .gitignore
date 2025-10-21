@@ -8,3 +8,5 @@ ChampSim/vcpkg_installed/
 angr-env/
 reverseLinkedList
 order_processing_times.csv
+ChampSim/tracer/pin/obj-intel64
+ChampSim/traces
