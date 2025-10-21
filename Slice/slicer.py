@@ -4,29 +4,31 @@ import lief
 
 def main():
     if len(sys.argv) < 3:
-        print("Usage: python3 slicer.py <binary> <target_runtime_addr>")
+        print("Usage: python3 slicer.py <binary> <target_addr>")
         return
 
     BINARY_PATH = sys.argv[1]
-    TARGET_RUNTIME_ADDR = int(sys.argv[2], 16)
+    TARGET_INPUT = int(sys.argv[2], 16)
 
     print(f"[*] Loading binary: {BINARY_PATH}")
     proj = angr.Project(BINARY_PATH, auto_load_libs=False)
-
-    # === Detect PIE and compute static offset ===
     binary = lief.parse(BINARY_PATH)
-    base_addr = 0
 
-    if binary.is_pie:
-        base_addr = proj.loader.main_object.mapped_base
-        print(f"[*] Detected PIE binary. Base load address: {hex(base_addr)}")
+    base_addr = proj.loader.main_object.mapped_base
+    print(f"[*] Detected PIE binary. Base load address: {hex(base_addr)}")
+
+    # --- Heuristic correction ---
+    # If the given address is smaller than base, assume it’s a relative offset
+    if TARGET_INPUT < base_addr:
+        TARGET_RUNTIME_ADDR = base_addr + TARGET_INPUT
+        print(f"[*] Address appears relative. Adjusted runtime addr: {hex(TARGET_RUNTIME_ADDR)}")
     else:
-        print("[*] Non-PIE binary detected (fixed base address).")
+        TARGET_RUNTIME_ADDR = TARGET_INPUT
 
     TARGET_STATIC_ADDR = TARGET_RUNTIME_ADDR - base_addr
     print(f"[*] Runtime address: {hex(TARGET_RUNTIME_ADDR)} → Adjusted static address: {hex(TARGET_STATIC_ADDR)}")
 
-    # === Step 1: Build CFG ===
+    # --- Build CFG ---
     print("[*] Building Control Flow Graph (CFG)...")
     cfg = proj.analyses.CFGEmulated(
         keep_state=True,
@@ -35,14 +37,14 @@ def main():
     )
     print("[*] CFG build complete.")
 
-    # === Step 2: Build Dependence Graphs ===
+    # --- Dependence Graphs ---
     print("[*] Building Control Dependence Graph (CDG)...")
     cdg = proj.analyses.CDG(cfg)
     print("[*] Building Data Dependence Graph (DDG)...")
     ddg = proj.analyses.DDG(cfg)
     print("[*] Dependence graphs complete.")
 
-    # === Step 3: Find the target node and statement ===
+    # --- Locate target instruction ---
     target_node = cfg.model.get_any_node(TARGET_STATIC_ADDR)
     if target_node is None:
         print(f"[!] Could not find CFG node for address {hex(TARGET_STATIC_ADDR)}")
@@ -61,17 +63,12 @@ def main():
 
     print(f"[*] Found target node at {hex(target_node.addr)}, stmt index {stmt_idx}")
 
-    # === Step 4: Backward Slice ===
+    # --- Backward Slice ---
     print("[*] Running backward slice...")
-    bs = proj.analyses.BackwardSlice(
-        cfg,
-        cdg=cdg,
-        ddg=ddg,
-        targets=[(target_node, stmt_idx)]
-    )
+    bs = proj.analyses.BackwardSlice(cfg, cdg=cdg, ddg=ddg, targets=[(target_node, stmt_idx)])
     print("[*] Slice complete.")
 
-    # === Step 5: Display slice ===
+    # --- Output ---
     print("\n" + "=" * 30)
     print("      CRITICAL SLICE BLOCKS")
     print("=" * 30)
