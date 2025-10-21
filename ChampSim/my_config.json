@@ -1,36 +1,43 @@
 {
   "num_cores": 1,
   "ooo_cpu": [
-	{
-	  "frequency": 3000,
-	  "rob_size": 224,
-	  "scheduler_size": 96,
-	  "fetch_width": 6,
-	  "decode_width": 6,
-	  "dispatch_width": 6,
-	  "execute_width": 4,
-	  "retire_width": 6,
-	  "branch_predictor": "bimodal",
-	  "btb": "basic_btb"
-	}
+    {
+      "frequency": 3000,
+      "rob_size": 224,
+      "scheduler_size": 96,
+      "lq_size": 64,
+      "sq_size": 128,
+      "fetch_width": 6,
+      "decode_width": 6,
+      "dispatch_width": 6,
+      "execute_width": 4,
+      "lq_width": 2,
+      "sq_width": 1,
+      "retire_width": 6,
+      "branch_predictor": "bimodal",
+      "btb": "basic_btb"
+    }
   ],
   "L1I": {
-	"sets": 64,
-	"ways": 8,
-	"latency": 3
+    "sets": 64,
+    "ways": 8,
+    "latency": 3,
+    "prefetcher": "no"
   },
   "L1D": {
-	"sets": 64,
-	"ways": 8,
-	"latency": 4
+    "sets": 64,
+    "ways": 8,
+    "latency": 4,
+    "prefetcher": "no"
   },
   "LLC": {
-	"sets": 1024,
-	"ways": 16,
-	"latency": 36
+    "sets": 819,
+    "ways": 20,
+    "latency": 36,
+    "prefetcher": "no"
   },
   "physical_memory": {
-	"data_rate": 2400,
-	"channels": 1
+    "data_rate": 2400,
+    "channels": 1
   }
 }
