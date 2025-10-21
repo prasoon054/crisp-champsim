@@ -10,3 +10,4 @@ reverseLinkedList
 order_processing_times.csv
 ChampSim/tracer/pin/obj-intel64
 ChampSim/traces
+loads.csv
