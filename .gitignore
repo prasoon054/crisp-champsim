@@ -1,1 +1,7 @@
-./Champsim/absolute.options
+Champsim/absolute.options
+ChampSim/.csconfig
+ChampSim/_configuration.mk
+ChampSim/absolute.options
+ChampSim/bin/
+ChampSim/config/__pycache__/
+ChampSim/vcpkg_installed/
