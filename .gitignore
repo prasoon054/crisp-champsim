@@ -5,3 +5,5 @@ ChampSim/absolute.options
 ChampSim/bin/
 ChampSim/config/__pycache__/
 ChampSim/vcpkg_installed/
+angr-env/
+reverseLinkedList
