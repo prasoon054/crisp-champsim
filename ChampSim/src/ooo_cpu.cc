@@ -36,6 +36,9 @@ constexpr long long STAT_PRINTING_PERIOD = 10000000;
 
 long O3_CPU::operate()
 {
+  // CommentP
+  //These funcions/Stages are ran in reverse order to avoid teleportation
+  // of Instructions.
   long progress{0};
   progress += retire_rob();                    // retire
   progress += complete_inflight_instruction(); // finalize execution

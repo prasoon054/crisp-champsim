@@ -94,6 +94,7 @@ struct program_ordered {
 };
 } // namespace champsim
 
+// Here we need to add an extra variable to identify critical instruction.
 struct ooo_model_instr : champsim::program_ordered<ooo_model_instr> {
   champsim::address ip{};
   champsim::chrono::clock::time_point ready_time{};
@@ -130,6 +131,10 @@ struct ooo_model_instr : champsim::program_ordered<ooo_model_instr> {
 
 private:
   template <typename T>
+  // This is the constructor where oop_model_instr object from
+  // input_instr is created.
+  // Here we need to add the another variable in ooo_model_instr is_critical which we will map to 
+  // newly created variable in input_instr object.
   ooo_model_instr(T instr, std::array<uint8_t, 2> local_asid) : ip(instr.ip), is_branch(instr.is_branch), branch_taken(instr.branch_taken), asid(local_asid)
   {
     std::remove_copy(std::begin(instr.destination_registers), std::end(instr.destination_registers), std::back_inserter(this->destination_registers), 0);
