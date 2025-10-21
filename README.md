@@ -10,6 +10,19 @@ source angr-env/bin/activate
 pip install -r requirements-{chipset}.txt
 ```
 
+### Champsim Setup
+- Install ```vcpkg``` submodule
+```sh 
+git submodule update --init
+vcpkg/bootstrap-vcpkg.sh
+vcpkg/vcpkg install 
+```
+- Compile
+```sh 
+./config.sh <config_file>
+make
+```
+
 ### Perf Setup
 - Temporarily set perf_event_paranoid to 1
 ```sudo sysctl kernel.perf_event_paranoid=1```
