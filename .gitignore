@@ -8,3 +8,4 @@ ChampSim/vcpkg_installed/
 angr-env/
 reverseLinkedList
 order_processing_times.csv
+loads.csv
