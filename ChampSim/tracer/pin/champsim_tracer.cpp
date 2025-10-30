@@ -77,6 +77,7 @@ void ResetCurrentInstruction(VOID* ip)
 {
   curr_instr = {};
   curr_instr.ip = (unsigned long long int)ip;
+  curr_instr.is_critical = 1;
 }
 
 BOOL ShouldWrite()
@@ -172,6 +173,7 @@ VOID Fini(INT32 code, VOID* v) { outfile.close(); }
  */
 int main(int argc, char* argv[])
 {
+  std::cout << "sizeof (input_instr)=" << sizeof(input_instr) << std::endl;
   // Initialize PIN library. Print help message if -h(elp) is specified
   // in the command line or the command line is invalid
   if (PIN_Init(argc, argv))
