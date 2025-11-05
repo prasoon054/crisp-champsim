@@ -44,6 +44,8 @@
 #include "register_allocator.h"
 #include "util/lru_table.h"
 #include "util/to_underlying.h"
+#include <map>
+#include <cstdint>
 
 class CACHE;
 class CacheBus
@@ -84,6 +86,11 @@ class O3_CPU : public champsim::operable
 {
 public:
   uint32_t cpu = 0;
+
+  // Delinquent Load Table (DLT)
+  std::map<champsim::address, uint32_t> delinquent_load_table; // Maps PC (ip) to miss_count
+  const uint64_t MISS_LATENCY_THRESHOLD_CYCLES = 100; // 100 cycles = approx LLC miss
+  const uint32_t CRITICAL_COUNTER_THRESHOLD = 10;   // Mark as critical after 10+ misses
 
   // cycle
   champsim::chrono::clock::time_point begin_phase_time{};

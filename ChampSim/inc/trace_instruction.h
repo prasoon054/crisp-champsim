@@ -33,6 +33,9 @@ constexpr std::size_t NUM_INSTR_DESTINATIONS = 2;
 constexpr std::size_t NUM_INSTR_SOURCES = 4;
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays): These classes are deliberately trivial
+
+// Here we need to add one variable to identify the critical instruction
+// Same variable need to add in Trace generator tool also.
 struct input_instr {
   // instruction pointer or PC (Program Counter)
   unsigned long long ip;
