@@ -99,6 +99,8 @@ struct ooo_model_instr : champsim::program_ordered<ooo_model_instr> {
   champsim::address ip{};
   champsim::chrono::clock::time_point ready_time{};
 
+  champsim::chrono::clock::time_point dispatch_time{}; // Timestamp for when instruction is dispatched
+
   bool is_branch = false;
   bool branch_taken = false;
   bool branch_prediction = false;

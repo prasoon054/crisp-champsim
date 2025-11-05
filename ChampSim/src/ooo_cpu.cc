@@ -419,7 +419,10 @@ long O3_CPU::dispatch_instruction()
          && ((std::size(DISPATCH_BUFFER.front().destination_memory) + std::size(SQ)) <= SQ_SIZE)) {
     ROB.push_back(std::move(DISPATCH_BUFFER.front()));
     DISPATCH_BUFFER.pop_front();
-    do_memory_scheduling(ROB.back());
+
+    auto &current_instruction = ROB.back();
+    current_instruction.dispatch_time = current_time; // Set the dispatch timestamp
+    do_memory_scheduling(current_instr);
 
     available_dispatch_bandwidth.consume();
     ROB.back().ready_time = current_time + (warmup ? champsim::chrono::clock::duration{} : SCHEDULING_LATENCY);
@@ -712,6 +715,26 @@ long O3_CPU::retire_rob()
   auto [retire_begin, retire_end] =
       champsim::get_span_p(std::cbegin(ROB), std::cend(ROB), champsim::bandwidth{RETIRE_WIDTH}, [](const auto& x) { return x.completed; });
   assert(std::distance(retire_begin, retire_end) >= 0); // end succeeds begin
+
+  // Iterate through the instructions that are retiring THIS cycle
+  for (auto rob_it = retire_begin; rob_it != retire_end; ++rob_it) {
+    // We only care about load instructions
+    if (!rob_it->source_memory.empty()) {
+      
+      // Calculate its total time in the machine
+      auto dispatch_to_retire_duration = current_time - rob_it->dispatch_time;
+      fmt::print("dispatch2retire time {} for rob id {}\n", dispatch_to_retire_duration, rob_it->instr_id);
+      
+      // Convert the simulation time duration into clock cycles
+      auto latency_in_cycles = dispatch_to_retire_duration / clock_period;
+
+      // If it took a long time, it's a delinquent load
+      if (latency_in_cycles > MISS_LATENCY_THRESHOLD_CYCLES) {
+        delinquent_load_table[rob_it->ip]++; // Increment its miss counter
+      }
+    }
+  }
+
   if constexpr (champsim::debug_print) {
     std::for_each(retire_begin, retire_end, [cycle = current_time.time_since_epoch() / clock_period](const auto& x) {
       fmt::print("[ROB] retire_rob instr_id: {} is retired cycle: {}\n", x.instr_id, cycle);
