@@ -88,7 +88,7 @@ public:
   uint32_t cpu = 0;
 
   // Delinquent Load Table (DLT)
-  std::map<uint64_t, uint32_t> delinquent_load_table; // Maps PC (ip) to miss_count
+  std::map<champsim::address, uint32_t> delinquent_load_table; // Maps PC (ip) to miss_count
   const uint64_t MISS_LATENCY_THRESHOLD_CYCLES = 100; // 100 cycles = approx LLC miss
   const uint32_t CRITICAL_COUNTER_THRESHOLD = 10;   // Mark as critical after 10+ misses
 

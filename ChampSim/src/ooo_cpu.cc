@@ -422,7 +422,7 @@ long O3_CPU::dispatch_instruction()
 
     auto &current_instruction = ROB.back();
     current_instruction.dispatch_time = current_time; // Set the dispatch timestamp
-    do_memory_scheduling(current_instr);
+    do_memory_scheduling(current_instruction);
 
     available_dispatch_bandwidth.consume();
     ROB.back().ready_time = current_time + (warmup ? champsim::chrono::clock::duration{} : SCHEDULING_LATENCY);
