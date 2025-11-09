@@ -3,7 +3,7 @@
   "ooo_cpu": [
     {
       "frequency": 3000,
-      "rob_size": 224,
+      "rob_size": 256,
       "scheduler_size": 96,
       "lq_size": 64,
       "sq_size": 128,
@@ -38,6 +38,7 @@
   },
   "physical_memory": {
     "data_rate": 2400,
-    "channels": 1
+    "channels": 1,
+    "rank": 2
   }
 }

@@ -407,6 +407,7 @@ long O3_CPU::decode_instruction()
 
 void O3_CPU::do_dib_update(const ooo_model_instr& instr) { DIB.fill(instr.ip); }
 
+//Original
 long O3_CPU::dispatch_instruction()
 {
   champsim::bandwidth available_dispatch_bandwidth{DISPATCH_WIDTH};
@@ -431,6 +432,7 @@ long O3_CPU::dispatch_instruction()
   return available_dispatch_bandwidth.amount_consumed();
 }
 
+// Original
 long O3_CPU::schedule_instruction()
 {
   champsim::bandwidth search_bw{SCHEDULER_SIZE};
@@ -454,6 +456,7 @@ long O3_CPU::schedule_instruction()
 
   return progress;
 }
+
 
 void O3_CPU::do_scheduling(ooo_model_instr& instr)
 {
@@ -723,11 +726,11 @@ long O3_CPU::retire_rob()
       
       // Calculate its total time in the machine
       auto dispatch_to_retire_duration = current_time - rob_it->dispatch_time;
-      fmt::print("dispatch2retire time {} for rob id {}\n", dispatch_to_retire_duration, rob_it->instr_id);
+      // fmt::print("dispatch2retire time {} for rob id {}\n", dispatch_to_retire_duration, rob_it->instr_id);
       
       // Convert the simulation time duration into clock cycles
       auto latency_in_cycles = dispatch_to_retire_duration / clock_period;
-
+      // fmt::print("dispatch2retire cycle {} for rob id {}\n", latency_in_cycles, rob_it->instr_id);
       // If it took a long time, it's a delinquent load
       if (latency_in_cycles > MISS_LATENCY_THRESHOLD_CYCLES) {
         delinquent_load_table[rob_it->ip]++; // Increment its miss counter
