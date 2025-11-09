@@ -29,6 +29,9 @@
 #include "deadlock.h"
 #include "instruction.h"
 #include "util/span.h"
+#include <unordered_set>
+
+static constexpr bool CRISP_DEBUG = true;
 
 std::chrono::seconds elapsed_time();
 
@@ -54,7 +57,9 @@ long O3_CPU::operate()
   progress += fetch_instruction(); // fetch
   progress += check_dib();
   initialize_instruction();
-
+  // === CRISP: flush pending prefetches each cycle ===
+  flush_pending_prefetches();
+  // === End CRISP addition ===
   // heartbeat
   if (show_heartbeat && (num_retired >= (last_heartbeat_instr + STAT_PRINTING_PERIOD))) {
     using double_duration = std::chrono::duration<double, typename champsim::chrono::picoseconds::period>;
@@ -79,6 +84,16 @@ void O3_CPU::initialize()
   // BRANCH PREDICTOR & BTB
   impl_initialize_branch_predictor();
   impl_initialize_btb();
+  // --- CRISP-related initialization ---
+  // Ensure the last-writer table has an entry per physical register.
+  // REGISTER_FILE_SIZE is the number of physical registers configured for this CPU.
+  last_writer.resize(REGISTER_FILE_SIZE, 0);
+
+  // Clear the critical-slice bookkeeping structures.
+  critical_slice_table.clear();
+  last_addr_by_pc.clear();
+  recent_instrs.clear();
+  // --- end CRISP init ---
 }
 
 void O3_CPU::begin_phase()
@@ -408,29 +423,99 @@ long O3_CPU::decode_instruction()
 void O3_CPU::do_dib_update(const ooo_model_instr& instr) { DIB.fill(instr.ip); }
 
 //Original
+// long O3_CPU::dispatch_instruction()
+// {
+//   champsim::bandwidth available_dispatch_bandwidth{DISPATCH_WIDTH};
+
+//   // dispatch DISPATCH_WIDTH instructions into the ROB
+//   while (available_dispatch_bandwidth.has_remaining() && !std::empty(DISPATCH_BUFFER) && DISPATCH_BUFFER.front().ready_time <= current_time
+//          && std::size(ROB) != ROB_SIZE
+//          && ((std::size_t)std::count_if(std::begin(LQ), std::end(LQ), [](const auto& lq_entry) { return !lq_entry.has_value(); })
+//              >= std::size(DISPATCH_BUFFER.front().source_memory))
+//          && ((std::size(DISPATCH_BUFFER.front().destination_memory) + std::size(SQ)) <= SQ_SIZE)) {
+//     ROB.push_back(std::move(DISPATCH_BUFFER.front()));
+//     DISPATCH_BUFFER.pop_front();
+
+//     auto &current_instruction = ROB.back();
+//     current_instruction.dispatch_time = current_time; // Set the dispatch timestamp
+//     do_memory_scheduling(current_instruction);
+
+//     available_dispatch_bandwidth.consume();
+//     ROB.back().ready_time = current_time + (warmup ? champsim::chrono::clock::duration{} : SCHEDULING_LATENCY);
+//   }
+
+//   return available_dispatch_bandwidth.amount_consumed();
+// }
+
 long O3_CPU::dispatch_instruction()
 {
   champsim::bandwidth available_dispatch_bandwidth{DISPATCH_WIDTH};
 
-  // dispatch DISPATCH_WIDTH instructions into the ROB
-  while (available_dispatch_bandwidth.has_remaining() && !std::empty(DISPATCH_BUFFER) && DISPATCH_BUFFER.front().ready_time <= current_time
-         && std::size(ROB) != ROB_SIZE
-         && ((std::size_t)std::count_if(std::begin(LQ), std::end(LQ), [](const auto& lq_entry) { return !lq_entry.has_value(); })
-             >= std::size(DISPATCH_BUFFER.front().source_memory))
-         && ((std::size(DISPATCH_BUFFER.front().destination_memory) + std::size(SQ)) <= SQ_SIZE)) {
+  // Dispatch DISPATCH_WIDTH instructions into the ROB
+  while (available_dispatch_bandwidth.has_remaining() &&
+         !std::empty(DISPATCH_BUFFER) &&
+         DISPATCH_BUFFER.front().ready_time <= current_time &&
+         std::size(ROB) != ROB_SIZE &&
+         ((std::size_t)std::count_if(std::begin(LQ), std::end(LQ),
+                                     [](const auto& lq_entry) { return !lq_entry.has_value(); }) >=
+          std::size(DISPATCH_BUFFER.front().source_memory)) &&
+         ((std::size(DISPATCH_BUFFER.front().destination_memory) + std::size(SQ)) <= SQ_SIZE))
+  {
+    // Move instruction from Dispatch Buffer to ROB
     ROB.push_back(std::move(DISPATCH_BUFFER.front()));
     DISPATCH_BUFFER.pop_front();
 
-    auto &current_instruction = ROB.back();
-    current_instruction.dispatch_time = current_time; // Set the dispatch timestamp
+    auto& current_instruction = ROB.back();
+
+    // --- Existing: dispatch timestamp (chrono) ---
+    current_instruction.dispatch_time = current_time;
+
+    // === CRISP: record numeric dispatch cycle and build predecessor info ===
+    uint64_t cur_cycle = current_time.time_since_epoch() / clock_period;
+    current_instruction.dispatch_cycle = cur_cycle;
+
+    // Build predecessor list from last_writer (register dependency)
+    current_instruction.pred_count = 0;
+    for (auto src : current_instruction.source_registers)
+    {
+      if (src >= 0 && static_cast<size_t>(src) < last_writer.size())
+      {
+        uint64_t last = last_writer[static_cast<size_t>(src)];
+        if (last && current_instruction.pred_count < ooo_model_instr::MAX_PREDS)
+          current_instruction.pred_instr_ids[current_instruction.pred_count++] = last;
+      }
+    }
+
+    // Update last_writer for destination registers
+    for (auto dst : current_instruction.destination_registers)
+    {
+      if (dst >= 0 && static_cast<size_t>(dst) < last_writer.size())
+        last_writer[static_cast<size_t>(dst)] = current_instruction.instr_id;
+    }
+
+    // Register this instruction as in-flight for slice tracking
+    recent_instrs[current_instruction.instr_id] = &current_instruction;
+
+    // === Prefetch opportunity ===
+    // If this instruction is a load and has a known critical slice, prefetch early.
+    if (!current_instruction.source_memory.empty())
+    {
+      issue_prefetches_for_pc(current_instruction.ip.to<uint64_t>(), cur_cycle);
+    }
+    // === End of CRISP additions ===
+
+    // Normal ChampSim memory scheduling
     do_memory_scheduling(current_instruction);
 
+    // Consume bandwidth and schedule ready time
     available_dispatch_bandwidth.consume();
-    ROB.back().ready_time = current_time + (warmup ? champsim::chrono::clock::duration{} : SCHEDULING_LATENCY);
+    ROB.back().ready_time =
+        current_time + (warmup ? champsim::chrono::clock::duration{} : SCHEDULING_LATENCY);
   }
 
   return available_dispatch_bandwidth.amount_consumed();
 }
+
 
 // Original
 long O3_CPU::schedule_instruction()
@@ -713,6 +798,53 @@ long O3_CPU::handle_memory_return()
   return progress;
 }
 
+//Original
+// long O3_CPU::retire_rob()
+// {
+//   auto [retire_begin, retire_end] =
+//       champsim::get_span_p(std::cbegin(ROB), std::cend(ROB), champsim::bandwidth{RETIRE_WIDTH}, [](const auto& x) { return x.completed; });
+//   assert(std::distance(retire_begin, retire_end) >= 0); // end succeeds begin
+
+//   // Iterate through the instructions that are retiring THIS cycle
+//   for (auto rob_it = retire_begin; rob_it != retire_end; ++rob_it) {
+//     // We only care about load instructions
+//     if (!rob_it->source_memory.empty()) {
+      
+//       // Calculate its total time in the machine
+//       auto dispatch_to_retire_duration = current_time - rob_it->dispatch_time;
+//       // fmt::print("dispatch2retire time {} for rob id {}\n", dispatch_to_retire_duration, rob_it->instr_id);
+      
+//       // Convert the simulation time duration into clock cycles
+//       auto latency_in_cycles = dispatch_to_retire_duration / clock_period;
+//       // fmt::print("dispatch2retire cycle {} for rob id {}\n", latency_in_cycles, rob_it->instr_id);
+//       // If it took a long time, it's a delinquent load
+//       if (latency_in_cycles > MISS_LATENCY_THRESHOLD_CYCLES) {
+//         delinquent_load_table[rob_it->ip]++; // Increment its miss counter
+//       }
+//     }
+//   }
+
+//   if constexpr (champsim::debug_print) {
+//     std::for_each(retire_begin, retire_end, [cycle = current_time.time_since_epoch() / clock_period](const auto& x) {
+//       fmt::print("[ROB] retire_rob instr_id: {} is retired cycle: {}\n", x.instr_id, cycle);
+//     });
+//   }
+
+//   // commit register writes to backend RAT
+//   // and recycle the old physical registers
+//   for (auto rob_it = retire_begin; rob_it != retire_end; ++rob_it) {
+//     for (auto dreg : rob_it->destination_registers) {
+//       reg_allocator.retire_dest_register(dreg);
+//     }
+//   }
+
+//   auto retire_count = std::distance(retire_begin, retire_end);
+//   num_retired += retire_count;
+//   ROB.erase(retire_begin, retire_end);
+
+//   return retire_count;
+// }
+
 long O3_CPU::retire_rob()
 {
   auto [retire_begin, retire_end] =
@@ -721,22 +853,99 @@ long O3_CPU::retire_rob()
 
   // Iterate through the instructions that are retiring THIS cycle
   for (auto rob_it = retire_begin; rob_it != retire_end; ++rob_it) {
-    // We only care about load instructions
+    // Only consider loads (have source memory addresses)
     if (!rob_it->source_memory.empty()) {
-      
-      // Calculate its total time in the machine
-      auto dispatch_to_retire_duration = current_time - rob_it->dispatch_time;
-      // fmt::print("dispatch2retire time {} for rob id {}\n", dispatch_to_retire_duration, rob_it->instr_id);
-      
-      // Convert the simulation time duration into clock cycles
-      auto latency_in_cycles = dispatch_to_retire_duration / clock_period;
-      // fmt::print("dispatch2retire cycle {} for rob id {}\n", latency_in_cycles, rob_it->instr_id);
-      // If it took a long time, it's a delinquent load
-      if (latency_in_cycles > MISS_LATENCY_THRESHOLD_CYCLES) {
-        delinquent_load_table[rob_it->ip]++; // Increment its miss counter
-      }
-    }
-  }
+
+      // If ready_time is not set (max), skip memory-latency-based detection.
+      if (rob_it->ready_time == champsim::chrono::clock::time_point::max()) {
+        // nothing to do for memory-latency detection
+      } else {
+        // Compute memory latency in cycles: (ready_time - dispatch_time) / clock_period
+        auto mem_duration = rob_it->ready_time - rob_it->dispatch_time;
+        uint64_t mem_latency_cycles = mem_duration / clock_period;
+
+        // Update delinquent load table if memory latency exceeds the defined miss threshold
+        if (mem_latency_cycles > MISS_LATENCY_THRESHOLD_CYCLES) {
+          // keep the original mapping keyed by address/ip
+          delinquent_load_table[rob_it->ip]++;
+          ++stat_crisp_critical_loads; // count of detected high-latency loads (for stats)
+        }
+
+        // CRISP critical detection (separate, tunable threshold)
+        if (mem_latency_cycles >= LATENCY_THRESHOLD) {
+          const uint64_t pc = rob_it->ip.to<uint64_t>();
+          const uint64_t cur_cycle = current_time.time_since_epoch() / clock_period;
+
+          // Per-PC throttle: only allow a trigger if enough cycles passed since last trigger
+          bool allow_trigger = false;
+          auto it_last = last_pc_trigger_cycle.find(pc);
+          if (it_last == last_pc_trigger_cycle.end()) {
+            allow_trigger = true;
+          } else {
+            if ((cur_cycle - it_last->second) >= MIN_PC_TRIGGER_INTERVAL) allow_trigger = true;
+          }
+
+          if (allow_trigger) {
+            // Build a short backward producer slice (cheap: follow primary predecessor)
+            std::vector<uint64_t> slice_ids;
+            uint64_t cur_id = rob_it->instr_id;
+            for (size_t depth = 0; depth < MAX_SLICE_DEPTH; ++depth) {
+              auto rit = recent_instrs.find(cur_id);
+              if (rit == recent_instrs.end()) break;
+              ooo_model_instr* cur_ins = rit->second;
+              if (!cur_ins) break;
+              slice_ids.push_back(cur_ins->instr_id);
+              if (cur_ins->pred_count == 0) break;
+              cur_id = cur_ins->pred_instr_ids[0];
+              if (cur_id == 0) break;
+            }
+
+            // Prepare SliceEntry
+            SliceEntry se;
+            se.load_pc = pc;
+            if (!rob_it->source_memory.empty() && rob_it->source_memory.size() > 0) {
+              se.last_addr = rob_it->source_memory[0].to<uint64_t>();
+              last_addr_by_pc[se.load_pc] = se.last_addr; // update fallback table
+            } else {
+              auto la = last_addr_by_pc.find(se.load_pc);
+              se.last_addr = (la != last_addr_by_pc.end()) ? la->second : 0;
+            }
+
+            se.slice_instr_ids = std::move(slice_ids);
+            se.confidence = 1;
+            se.last_seen_cycle = cur_cycle;
+
+            // Bounded CST: evict oldest entry if full
+            if (critical_slice_table.size() >= CST_MAX_ENTRIES) {
+              uint64_t min_cycle = std::numeric_limits<uint64_t>::max();
+              uint64_t victim_key = 0;
+              bool found = false;
+              for (const auto &kv : critical_slice_table) {
+                if (kv.second.last_seen_cycle < min_cycle) {
+                  min_cycle = kv.second.last_seen_cycle;
+                  victim_key = kv.first;
+                  found = true;
+                }
+              }
+              if (found) critical_slice_table.erase(victim_key);
+            }
+
+            // Insert/update CST
+            critical_slice_table[se.load_pc] = std::move(se);
+
+            // IMPORTANT: don't set last_pc_trigger_cycle[pc] here.
+            // issue_prefetches_for_pc() is responsible for updating it only when it actually enqueues prefetches.
+
+            // Issue prefetches immediately for this PC (enqueue addresses)
+            issue_prefetches_for_pc(pc, cur_cycle);
+
+            // Mark that flush should be performed (if you guard flushing)
+            pending_prefetches_added = true;
+          } // if allow_trigger
+        } // if mem_latency >= LATENCY_THRESHOLD
+      } // else ready_time valid
+    } // end if load
+  } // end for retire range
 
   if constexpr (champsim::debug_print) {
     std::for_each(retire_begin, retire_end, [cycle = current_time.time_since_epoch() / clock_period](const auto& x) {
@@ -744,12 +953,13 @@ long O3_CPU::retire_rob()
     });
   }
 
-  // commit register writes to backend RAT
-  // and recycle the old physical registers
+  // commit register writes to backend RAT and recycle the old physical registers
   for (auto rob_it = retire_begin; rob_it != retire_end; ++rob_it) {
     for (auto dreg : rob_it->destination_registers) {
       reg_allocator.retire_dest_register(dreg);
     }
+    // Remove retired instruction from in-flight tracking (recent_instrs)
+    recent_instrs.erase(rob_it->instr_id);
   }
 
   auto retire_count = std::distance(retire_begin, retire_end);
@@ -758,6 +968,7 @@ long O3_CPU::retire_rob()
 
   return retire_count;
 }
+
 
 void O3_CPU::impl_initialize_branch_predictor() const { branch_module_pimpl->impl_initialize_branch_predictor(); }
 
@@ -876,3 +1087,166 @@ bool CacheBus::issue_write(request_type data_packet)
 
   return lower_level->add_wq(data_packet);
 }
+
+
+// ============================================================================
+//  CRISP Prefetch Helper (placeholder version)
+// ============================================================================
+
+
+void O3_CPU::issue_prefetches_for_pc(uint64_t pc, uint64_t cur_cycle)
+{
+    // fmt::print("CRISP: entered issue_prefetches_for_pc() for PC=0x{:x} @ cycle={}\n", pc, cur_cycle);
+
+    // === Defensive init for throttle maps ===
+    if (last_pc_trigger_cycle.find(pc) == last_pc_trigger_cycle.end())
+        last_pc_trigger_cycle[pc] = 0;
+    if (critical_slice_table.find(pc) == critical_slice_table.end()) {
+        // fmt::print("CRISP: no slice entry for PC=0x{:x}, skipping\n", pc);
+        return;
+    }
+
+    SliceEntry &se = critical_slice_table[pc];
+
+    // No valid recorded address → nothing to prefetch
+    if (se.last_addr == 0) {
+        // fmt::print("CRISP: skipping PC=0x{:x} (no last_addr)\n", pc);
+        return;
+    }
+
+    // === Prefetch window management (rate limiting) ===
+    if (last_prefetch_window_cycle == 0)
+        last_prefetch_window_cycle = cur_cycle;
+
+    if (cur_cycle - last_prefetch_window_cycle >= PREFETCH_WINDOW_CYCLES) {
+        // fmt::print("CRISP: new window start @ cycle={}\n", cur_cycle);
+        prefetches_issued_window = 0;
+        last_prefetch_window_cycle = cur_cycle;
+    }
+
+    if (prefetches_issued_window >= MAX_PREFETCH_PER_WINDOW) {
+        // fmt::print("CRISP: window full, skipping\n");
+        return;
+    }
+
+    // === Per-PC throttling check ===
+    uint64_t delta = cur_cycle - last_pc_trigger_cycle[pc];
+    if (delta < MIN_PC_TRIGGER_INTERVAL) {
+        // fmt::print("CRISP: PC=0x{:x} cooldown active (Δ={} < {})\n",
+        //            pc, delta, MIN_PC_TRIGGER_INTERVAL);
+        return;
+    }
+
+    // === Candidate prefetch addresses ===
+    constexpr size_t degree = 2;
+    constexpr uint64_t CACHE_LINE = 64;
+
+    std::array<uint64_t, degree> candidates = {
+        se.last_addr,
+        se.last_addr + CACHE_LINE
+    };
+
+    bool any_enqueued = false; // track if we actually queued something
+
+    for (uint64_t raw_addr : candidates) {
+        uint64_t line_addr = raw_addr & ~(CACHE_LINE - 1); // align to cache line
+
+        // --- Cooldown suppression (per line) ---
+        bool can_issue = false;
+        auto it_last = last_prefetch_cycle.find(line_addr);
+        if (it_last == last_prefetch_cycle.end()) {
+            can_issue = true;
+        } else if (cur_cycle - it_last->second >= PREFETCH_COOLDOWN) {
+            can_issue = true;
+        }
+
+        if (!can_issue) {
+            // fmt::print("CRISP: skip line 0x{:x} (line cooldown)\n", line_addr);
+            continue;
+        }
+
+        // --- Prevent duplicates already in pending queue ---
+        if (std::find(pending_prefetches.begin(), pending_prefetches.end(), line_addr)
+            != pending_prefetches.end()) {
+            last_prefetch_cycle[line_addr] = cur_cycle;
+            // fmt::print("CRISP: already pending line 0x{:x}, skip duplicate\n", line_addr);
+            continue;
+        }
+
+        // Record the prefetch time for cooldown tracking
+        last_prefetch_cycle[line_addr] = cur_cycle;
+
+        // === Enqueue the prefetch ===
+        pending_prefetches.push_back(line_addr);
+        ++prefetches_issued_window;
+        ++stat_prefetch_enqueued;
+        pending_prefetches_added = true;
+        any_enqueued = true;
+
+        // fmt::print("CPU{}: [CRISP] Prefetch ENQUEUED -> 0x{:x} (PC=0x{:x})\n",
+        //            cpu, line_addr, pc);
+
+        // stop if window limit reached
+        if (prefetches_issued_window >= MAX_PREFETCH_PER_WINDOW)
+            break;
+    }
+
+    // ✅ Update PC trigger time *only if* we enqueued at least one prefetch
+    if (any_enqueued) {
+        last_pc_trigger_cycle[pc] = cur_cycle;
+        // fmt::print("CRISP: updated last_pc_trigger_cycle[0x{:x}] = {}\n", pc, cur_cycle);
+    } else {
+        // fmt::print("CRISP: no candidates enqueued for PC=0x{:x}\n", pc);
+    }
+
+    // Reinforce confidence
+    se.confidence++;
+}
+
+void O3_CPU::flush_pending_prefetches()
+{
+    if (pending_prefetches.empty())
+        return;
+
+    // Deduplicate and limit burst
+    std::unordered_set<uint64_t> seen;
+    size_t flushed = 0;
+    const size_t MAX_BURST = 8; // don't flood every cycle
+
+    while (!pending_prefetches.empty() && flushed < MAX_BURST)
+    {
+        uint64_t addr = pending_prefetches.front();
+        pending_prefetches.pop_front();
+        if (!seen.insert(addr).second) continue; // already seen
+        if (seen.count(addr))
+            continue;
+        seen.insert(addr);
+
+        // === CRISP: Create and send a lightweight prefetch request to L1D ===
+        champsim::channel::request_type req{};
+        req.address = champsim::address{addr};
+        req.cpu = cpu;
+
+        // ✅ FIXED: fill ASID array elements directly
+        req.asid[0] = static_cast<uint8_t>(cpu);
+        req.asid[1] = static_cast<uint8_t>(cpu);
+
+        bool issued = L1D_bus.issue_read(req);
+
+        if constexpr (CRISP_DEBUG)
+        {
+            if (issued)
+                fmt::print("CPU{}: [CRISP] Prefetch ISSUED -> 0x{:x}\n", cpu, addr);
+            else
+                fmt::print("CPU{}: [CRISP] Prefetch DROPPED (L1D busy) -> 0x{:x}\n", cpu, addr);
+        }
+
+        if (issued)
+        {
+            ++stat_prefetch_flushed;
+            ++flushed;
+        }
+    }
+}
+
+

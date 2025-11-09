@@ -46,6 +46,7 @@
 #include "util/to_underlying.h"
 #include <map>
 #include <cstdint>
+#include <unordered_map>
 
 class CACHE;
 class CacheBus
@@ -89,8 +90,63 @@ public:
 
   // Delinquent Load Table (DLT)
   std::map<champsim::address, uint32_t> delinquent_load_table; // Maps PC (ip) to miss_count
-  const uint64_t MISS_LATENCY_THRESHOLD_CYCLES = 100; // 100 cycles = approx LLC miss
+  const uint64_t MISS_LATENCY_THRESHOLD_CYCLES = 30; // 100 cycles = approx LLC miss
   const uint32_t CRITICAL_COUNTER_THRESHOLD = 10;   // Mark as critical after 10+ misses
+
+
+  // === CRISP-like critical slice tracking ===
+  static constexpr uint64_t LATENCY_THRESHOLD = 30;  // cycles
+  static constexpr size_t MAX_SLICE_DEPTH = 8;
+  static constexpr size_t CST_MAX_ENTRIES = 512;
+
+  // last_writer: physical reg -> last instr id
+  std::vector<uint64_t> last_writer;
+
+  struct SliceEntry {
+      uint64_t load_pc = 0;
+      uint64_t last_addr = 0;
+      std::vector<uint64_t> slice_instr_ids;
+      uint32_t confidence = 0;
+      uint64_t last_seen_cycle = 0;
+  };
+
+  std::unordered_map<uint64_t, SliceEntry> critical_slice_table;
+  std::unordered_map<uint64_t, uint64_t> last_addr_by_pc; // PC→last dynamic addr
+  std::unordered_map<uint64_t, ooo_model_instr*> recent_instrs; // in-flight map
+
+  // Prefetcher helper prototype (implemented in .cc)
+  void issue_prefetches_for_pc(uint64_t pc, uint64_t cur_cycle);
+  void flush_pending_prefetches();
+
+
+  // --- pending prefetch queue and bandwidth limiter ---
+  std::deque<uint64_t> pending_prefetches;               // addresses we plan to prefetch
+  uint64_t prefetches_issued_window = 0;                 // count in current window
+  uint64_t last_prefetch_window_cycle = 0;               // window start cycle
+
+  // Prefetch tuning knobs (per-core)
+  static constexpr uint64_t PREFETCH_WINDOW_CYCLES = 1000; // cycles per measurement window
+  static constexpr size_t MAX_PREFETCH_PER_WINDOW = 16;    // max prefetches per window
+
+  // Stats (optional)
+  uint64_t stat_prefetch_enqueued = 0;
+  uint64_t stat_prefetch_flushed = 0;
+    
+  // Throttle: avoid repeatedly triggering the same PC
+
+  bool pending_prefetches_added = false;
+
+  // simple statistic: number of detected high-latency loads
+  uint64_t stat_crisp_critical_loads = 0; 
+  std::unordered_map<uint64_t, uint64_t> last_pc_trigger_cycle; // pc -> last cycle we triggered prefetches
+  std::unordered_map<uint64_t, uint64_t> last_prefetch_cycle;
+
+  static constexpr uint64_t MIN_PC_TRIGGER_INTERVAL = 500; // cycles; tune (e.g., 1k)
+  static constexpr uint64_t PREFETCH_COOLDOWN = 500;  // in cycles
+
+    /* ----------------------------------------------------------------------------*/
+
+
 
   // cycle
   champsim::chrono::clock::time_point begin_phase_time{};

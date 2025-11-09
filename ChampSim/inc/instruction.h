@@ -100,7 +100,7 @@ struct ooo_model_instr : champsim::program_ordered<ooo_model_instr> {
   champsim::chrono::clock::time_point ready_time{};
 
   champsim::chrono::clock::time_point dispatch_time{}; // Timestamp for when instruction is dispatched
-  bool is_critical = false;  // Added to mark instruction critical 
+  // bool is_critical = false;  // Added to mark instruction critical 
 
 
   bool is_branch = false;
@@ -132,6 +132,23 @@ struct ooo_model_instr : champsim::program_ordered<ooo_model_instr> {
 
   // these are indices of instructions in the ROB that depend on me
   std::vector<std::reference_wrapper<ooo_model_instr>> registers_instrs_depend_on_me;
+
+  /* ----------------------------------------------------------------------------*/
+  // --- in instruction.h (inside ooo_model_instr) ---
+
+  uint64_t dispatch_cycle = 0;   // record cycle at dispatch (use integer cycles)
+  uint64_t retire_cycle = 0;     // record cycle at retire (filled at retire)
+  bool is_critical = false;      // existing
+
+  // track up to N predecessors (instruction ids) for simple slice backtracking
+  static constexpr size_t MAX_PREDS = 4;       // tuneable
+  std::array<uint64_t, MAX_PREDS> pred_instr_ids = {0, 0, 0, 0};
+  uint8_t pred_count = 0;
+
+  // optional: record last-seen effective memory address for loads
+  // (some traces already include this — store a dynamic addr seen)
+  uint64_t dynamic_addr = 0;
+  /* ----------------------------------------------------------------------------*/
 
 private:
   template <typename T>

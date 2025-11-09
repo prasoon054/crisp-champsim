@@ -24,12 +24,13 @@
     "latency": 3,
     "prefetcher": "no"
   },
-  "L1D": {
-    "sets": 64,
-    "ways": 8,
-    "latency": 4,
-    "prefetcher": "no"
-  },
+"L1D": {
+  "sets": 64,
+  "ways": 8,
+  "latency": 4,
+  "prefetcher": "no"   
+},
+
   "LLC": {
     "sets": 819,
     "ways": 20,
@@ -38,7 +39,6 @@
   },
   "physical_memory": {
     "data_rate": 2400,
-    "channels": 1,
-    "rank": 2
+    "channels": 1
   }
 }
