@@ -478,6 +478,15 @@ long O3_CPU::dispatch_instruction()
         // ✅ Proceed with dispatch (no renaming here)
         ROB.push_back(std::move(instr));
         auto& rob_instr = ROB.back();
+        // ---- CRISP: Mark new instances of known critical PCs ----
+        if (crisp_enable) {
+          uint64_t pc_val = rob_instr.ip.to<uint64_t>();
+          if (critical_pc_table.count(pc_val) && critical_pc_table[pc_val]) {
+            rob_instr.is_critical = true;
+            if (crisp_debug)
+              fmt::print("CPU{}: [CRISP] 🔁 Re-marked new critical instance @PC=0x{:x}\n", cpu, pc_val);
+          }
+        }
 
         rob_instr.dispatch_time = current_time;
         rob_instr.dispatch_cycle = current_time.time_since_epoch() / clock_period;
@@ -564,7 +573,22 @@ long O3_CPU::schedule_instruction()
 
     int crisp_scheduled  = 0;
     int normal_scheduled = 0;
-    bool rob_head_scheduled = false;
+
+    // Helper: compute how many source regs still need allocation for an instruction
+    auto sources_to_allocate = [this](const ooo_model_instr& ins) -> long {
+        return std::count_if(ins.source_registers.begin(), ins.source_registers.end(),
+                             [&alloc = std::as_const(reg_allocator)](auto srcreg) {
+                                 // srcreg holds an architectural register id prior to renaming
+                                 // isAllocated returns whether a physical mapping exists for this arch reg
+                                 return (srcreg >= 0) && (!alloc.isAllocated(srcreg));
+                             });
+    };
+
+    // Helper: count destination registers that need allocation (arch regs present)
+    auto dests_count = [](const ooo_model_instr& ins) -> long {
+        return std::count_if(ins.destination_registers.begin(), ins.destination_registers.end(),
+                             [](auto d) { return d >= 0; });
+    };
 
     // ===========================
     // STEP 1: ROB Head Guarantee
@@ -574,20 +598,23 @@ long O3_CPU::schedule_instruction()
         if (!rob_head.scheduled && !rob_head.executed &&
             rob_head.ready_time <= current_time)
         {
-            bool head_ready = std::all_of(
-                rob_head.source_registers.begin(), rob_head.source_registers.end(),
-                [&](auto srcreg){ return reg_allocator.isValid(srcreg); });
+            // follow original ChampSim check: ensure allocator can allocate needed phys regs
+            long src_allocs = sources_to_allocate(rob_head);
+            long dests = dests_count(rob_head);
 
-            if (head_ready && reg_allocator.count_free_registers() >= rob_head.destination_registers.size())
-            {
+            if (reg_allocator.count_free_registers() >= (src_allocs + dests)) {
+                // schedule (this will do the renaming inside do_scheduling)
                 do_scheduling(rob_head);
                 ++progress;
-                rob_head_scheduled = true;
 
                 if (crisp_debug)
                     fmt::print("CPU{}: [CRISP] 🚀 Scheduled ROB head id={} (guaranteed progress)\n",
                                cpu, rob_head.instr_id);
                 search_bw.consume();
+            } else {
+                if (crisp_debug)
+                    fmt::print("CPU{}: [CRISP] ROB-head id={} needs {}+{} regs but only {} free\n",
+                               cpu, rob_head.instr_id, src_allocs, dests, reg_allocator.count_free_registers());
             }
         }
     }
@@ -606,23 +633,23 @@ long O3_CPU::schedule_instruction()
             if (!instr.is_critical || instr.ready_time > current_time)
                 continue;
 
-            // Avoid scheduling under high register pressure
+            // Avoid scheduling under extreme register pressure
             if (reg_allocator.count_free_registers() < CRISP_MIN_FREE_REGS)
                 continue;
 
-            // Demote stale criticals
+            // Demote stale criticals (optional safety)
             uint64_t waited = (current_time - instr.dispatch_time) / clock_period;
             if (waited > STALL_DEMOTE_THRESHOLD) {
                 instr.is_critical = false;
                 continue;
             }
 
-            bool all_ready = std::all_of(
-                instr.source_registers.begin(), instr.source_registers.end(),
-                [&](auto srcreg){ return reg_allocator.isValid(srcreg); });
-            if (!all_ready)
+            long src_allocs = sources_to_allocate(instr);
+            long dests = dests_count(instr);
+            if (reg_allocator.count_free_registers() < (src_allocs + dests))
                 continue;
 
+            // Ready for renaming/scheduling; do_scheduling will perform the rename
             do_scheduling(instr);
             ++progress;
             ++crisp_scheduled;
@@ -647,10 +674,9 @@ long O3_CPU::schedule_instruction()
         if (instr.is_critical || instr.ready_time > current_time)
             continue;
 
-        bool all_ready = std::all_of(
-            instr.source_registers.begin(), instr.source_registers.end(),
-            [&](auto srcreg){ return reg_allocator.isValid(srcreg); });
-        if (!all_ready)
+        long src_allocs = sources_to_allocate(instr);
+        long dests = dests_count(instr);
+        if (reg_allocator.count_free_registers() < (src_allocs + dests))
             continue;
 
         do_scheduling(instr);
