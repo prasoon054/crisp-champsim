@@ -24,6 +24,7 @@
 #include <limits>
 #include <string_view>
 #include <vector>
+#include <unordered_set>   // ✅ needed for CRISP slice visited set
 
 #include "address.h"
 #include "champsim.h"
@@ -98,6 +99,9 @@ struct ooo_model_instr : champsim::program_ordered<ooo_model_instr> {
   champsim::address ip{};
   champsim::chrono::clock::time_point ready_time{};
 
+  // Timestamp when this instruction was dispatched (used by CRISP)
+  champsim::chrono::clock::time_point dispatch_time{champsim::chrono::clock::time_point::max()};
+
   bool is_branch = false;
   bool branch_taken = false;
   bool branch_prediction = false;
@@ -127,6 +131,21 @@ struct ooo_model_instr : champsim::program_ordered<ooo_model_instr> {
 
   // these are indices of instructions in the ROB that depend on me
   std::vector<std::reference_wrapper<ooo_model_instr>> registers_instrs_depend_on_me;
+
+    // --- CRISP per-instruction bookkeeping ---
+  uint64_t dispatch_cycle = 0;   // record cycle at dispatch
+  uint64_t retire_cycle = 0;     // filled at retire
+  bool is_critical = false;      // mark that this instruction belongs to a critical slice
+
+  // small predecessor list (simple backtracking slice)
+  static constexpr size_t MAX_PREDS = 16;
+  std::array<uint64_t, MAX_PREDS> pred_instr_ids = {};
+  uint8_t pred_count = 0;
+
+  // optional last seen effective address for loads
+  uint64_t dynamic_addr = 0;
+  // --- end CRISP fields ---
+
 
 private:
   template <typename T>

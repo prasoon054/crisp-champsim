@@ -1,0 +1,605 @@
+[VMEM] WARNING: physical memory size is smaller than virtual memory size.
+
+*** ChampSim Multicore Out-of-Order Simulator ***
+Warmup Instructions: 20000000
+Simulation Instructions: 50000000
+Number of CPUs: 1
+Page size: 4096
+
+Off-chip DRAM Size: 16 GiB Channels: 1 Width: 64-bit Data Rate: 2403 MT/s
+Heartbeat CPU 0 instructions: 10000002 cycles: 3657766 heartbeat IPC: 2.734 cumulative IPC: 2.734 (Simulation time: 00 hr 00 min 22 sec)
+=== [CPU0 CRISP Summary] ===
+  Critical Loads Triggered : 0
+  Instructions Marked      : 0
+  Criticals Scheduled      : 0
+==============================
+Warmup finished CPU 0 instructions: 20000000 cycles: 9320987 cumulative IPC: 2.146 (Simulation time: 00 hr 00 min 54 sec)
+Warmup complete CPU 0 instructions: 20000000 cycles: 9320987 cumulative IPC: 2.146 (Simulation time: 00 hr 00 min 54 sec)
+Heartbeat CPU 0 instructions: 20000006 cycles: 9320988 heartbeat IPC: 1.766 cumulative IPC: 6 (Simulation time: 00 hr 00 min 54 sec)
+DEADLOCK! CPU 0 cycle 9331990
+cpu0_IFETCH empty
+
+cpu0_DECODE empty
+
+cpu0_DISPATCH empty
+
+[cpu0_ROB] entry:   0 instr_id: 20002132 fetch_issued: false fetch_completed: true scheduled: true executed: false completed: false num_reg_dependent: 1 num_mem_ops: 1 event: 9331478
+[cpu0_ROB] entry:   1 instr_id: 20002133 fetch_issued: false fetch_completed: true scheduled: true executed: false completed: false num_reg_dependent: 1 num_mem_ops: 1 event: 9331478
+[cpu0_ROB] entry:   2 instr_id: 20002134 fetch_issued: false fetch_completed: true scheduled: true executed: false completed: false num_reg_dependent: 2 num_mem_ops: 0 event: 9331479
+[cpu0_ROB] entry:   3 instr_id: 20002135 fetch_issued: false fetch_completed: true scheduled: true executed: false completed: false num_reg_dependent: 1 num_mem_ops: 0 event: 9331479
+
+Frontend Register Allocation Table        Backend Register Allocation Table
+Arch reg:   0    Phys reg:  -1            Arch reg:   0    Phys reg:  -1
+Arch reg:   1    Phys reg:  -1            Arch reg:   1    Phys reg:  -1
+Arch reg:   2    Phys reg:  -1            Arch reg:   2    Phys reg:  -1
+Arch reg:   3    Phys reg: 106            Arch reg:   3    Phys reg: 106
+Arch reg:   4    Phys reg: 123            Arch reg:   4    Phys reg: 123
+Arch reg:   5    Phys reg:  18            Arch reg:   5    Phys reg:  18
+Arch reg:   6    Phys reg:  91            Arch reg:   6    Phys reg:  91
+Arch reg:   7    Phys reg:  30            Arch reg:   7    Phys reg:  30
+Arch reg:   8    Phys reg:  80            Arch reg:   8    Phys reg:  80
+Arch reg:   9    Phys reg:  79            Arch reg:   9    Phys reg:  79
+Arch reg:  10    Phys reg:  37            Arch reg:  10    Phys reg:   3
+Arch reg:  11    Phys reg: 117            Arch reg:  11    Phys reg:  56
+Arch reg:  12    Phys reg:  -1            Arch reg:  12    Phys reg:  -1
+Arch reg:  13    Phys reg:  82            Arch reg:  13    Phys reg:  82
+Arch reg:  14    Phys reg:  12            Arch reg:  14    Phys reg:  12
+Arch reg:  15    Phys reg:  -1            Arch reg:  15    Phys reg:  -1
+Arch reg:  16    Phys reg:  -1            Arch reg:  16    Phys reg:  -1
+Arch reg:  17    Phys reg:  -1            Arch reg:  17    Phys reg:  -1
+Arch reg:  18    Phys reg:  41            Arch reg:  18    Phys reg:  41
+Arch reg:  19    Phys reg:  -1            Arch reg:  19    Phys reg:  -1
+Arch reg:  20    Phys reg:  -1            Arch reg:  20    Phys reg:  -1
+Arch reg:  21    Phys reg:  -1            Arch reg:  21    Phys reg:  -1
+Arch reg:  22    Phys reg:  -1            Arch reg:  22    Phys reg:  -1
+Arch reg:  23    Phys reg:  -1            Arch reg:  23    Phys reg:  -1
+Arch reg:  24    Phys reg:  -1            Arch reg:  24    Phys reg:  -1
+Arch reg:  25    Phys reg:  42            Arch reg:  25    Phys reg:  94
+Arch reg:  26    Phys reg:   8            Arch reg:  26    Phys reg: 120
+Arch reg:  27    Phys reg:  -1            Arch reg:  27    Phys reg:  -1
+Arch reg:  28    Phys reg:  -1            Arch reg:  28    Phys reg:  -1
+Arch reg:  29    Phys reg:  -1            Arch reg:  29    Phys reg:  -1
+Arch reg:  30    Phys reg:  83            Arch reg:  30    Phys reg:  83
+Arch reg:  31    Phys reg:  -1            Arch reg:  31    Phys reg:  -1
+Arch reg:  32    Phys reg:  -1            Arch reg:  32    Phys reg:  -1
+Arch reg:  33    Phys reg:  -1            Arch reg:  33    Phys reg:  -1
+Arch reg:  34    Phys reg:  -1            Arch reg:  34    Phys reg:  -1
+Arch reg:  35    Phys reg:  -1            Arch reg:  35    Phys reg:  -1
+Arch reg:  36    Phys reg:  -1            Arch reg:  36    Phys reg:  -1
+Arch reg:  37    Phys reg:  -1            Arch reg:  37    Phys reg:  -1
+Arch reg:  38    Phys reg:  -1            Arch reg:  38    Phys reg:  -1
+Arch reg:  39    Phys reg:  -1            Arch reg:  39    Phys reg:  -1
+Arch reg:  40    Phys reg:  -1            Arch reg:  40    Phys reg:  -1
+Arch reg:  41    Phys reg:  -1            Arch reg:  41    Phys reg:  -1
+Arch reg:  42    Phys reg:  -1            Arch reg:  42    Phys reg:  -1
+Arch reg:  43    Phys reg:  -1            Arch reg:  43    Phys reg:  -1
+Arch reg:  44    Phys reg:  -1            Arch reg:  44    Phys reg:  -1
+Arch reg:  45    Phys reg:  43            Arch reg:  45    Phys reg:  43
+Arch reg:  46    Phys reg:  -1            Arch reg:  46    Phys reg:  -1
+Arch reg:  47    Phys reg:  -1            Arch reg:  47    Phys reg:  -1
+Arch reg:  48    Phys reg:  -1            Arch reg:  48    Phys reg:  -1
+Arch reg:  49    Phys reg:  -1            Arch reg:  49    Phys reg:  -1
+Arch reg:  50    Phys reg:  -1            Arch reg:  50    Phys reg:  -1
+Arch reg:  51    Phys reg:  -1            Arch reg:  51    Phys reg:  -1
+Arch reg:  52    Phys reg:  -1            Arch reg:  52    Phys reg:  -1
+Arch reg:  53    Phys reg:  -1            Arch reg:  53    Phys reg:  -1
+Arch reg:  54    Phys reg:  14            Arch reg:  54    Phys reg:  14
+Arch reg:  55    Phys reg:  33            Arch reg:  55    Phys reg:  33
+Arch reg:  56    Phys reg:  74            Arch reg:  56    Phys reg:  74
+Arch reg:  57    Phys reg:  -1            Arch reg:  57    Phys reg:  -1
+Arch reg:  58    Phys reg:  -1            Arch reg:  58    Phys reg:  -1
+Arch reg:  59    Phys reg:  -1            Arch reg:  59    Phys reg:  -1
+Arch reg:  60    Phys reg:  -1            Arch reg:  60    Phys reg:  -1
+Arch reg:  61    Phys reg:  -1            Arch reg:  61    Phys reg:  -1
+Arch reg:  62    Phys reg:  -1            Arch reg:  62    Phys reg:  -1
+Arch reg:  63    Phys reg:  -1            Arch reg:  63    Phys reg:  -1
+Arch reg:  64    Phys reg:  -1            Arch reg:  64    Phys reg:  -1
+Arch reg:  65    Phys reg:  -1            Arch reg:  65    Phys reg:  -1
+Arch reg:  66    Phys reg:  -1            Arch reg:  66    Phys reg:  -1
+Arch reg:  67    Phys reg:  -1            Arch reg:  67    Phys reg:  -1
+Arch reg:  68    Phys reg:  -1            Arch reg:  68    Phys reg:  -1
+Arch reg:  69    Phys reg:  -1            Arch reg:  69    Phys reg:  -1
+Arch reg:  70    Phys reg:  -1            Arch reg:  70    Phys reg:  -1
+Arch reg:  71    Phys reg:  -1            Arch reg:  71    Phys reg:  -1
+Arch reg:  72    Phys reg:  -1            Arch reg:  72    Phys reg:  -1
+Arch reg:  73    Phys reg:  -1            Arch reg:  73    Phys reg:  -1
+Arch reg:  74    Phys reg:  -1            Arch reg:  74    Phys reg:  -1
+Arch reg:  75    Phys reg:  -1            Arch reg:  75    Phys reg:  -1
+Arch reg:  76    Phys reg:  -1            Arch reg:  76    Phys reg:  -1
+Arch reg:  77    Phys reg:  -1            Arch reg:  77    Phys reg:  -1
+Arch reg:  78    Phys reg:  -1            Arch reg:  78    Phys reg:  -1
+Arch reg:  79    Phys reg:  -1            Arch reg:  79    Phys reg:  -1
+Arch reg:  80    Phys reg:  -1            Arch reg:  80    Phys reg:  -1
+Arch reg:  81    Phys reg:  -1            Arch reg:  81    Phys reg:  -1
+Arch reg:  82    Phys reg:  -1            Arch reg:  82    Phys reg:  -1
+Arch reg:  83    Phys reg:  -1            Arch reg:  83    Phys reg:  -1
+Arch reg:  84    Phys reg:  -1            Arch reg:  84    Phys reg:  -1
+Arch reg:  85    Phys reg:  -1            Arch reg:  85    Phys reg:  -1
+Arch reg:  86    Phys reg:  -1            Arch reg:  86    Phys reg:  -1
+Arch reg:  87    Phys reg:  -1            Arch reg:  87    Phys reg:  -1
+Arch reg:  88    Phys reg:  -1            Arch reg:  88    Phys reg:  -1
+Arch reg:  89    Phys reg:  -1            Arch reg:  89    Phys reg:  -1
+Arch reg:  90    Phys reg:  -1            Arch reg:  90    Phys reg:  -1
+Arch reg:  91    Phys reg:  -1            Arch reg:  91    Phys reg:  -1
+Arch reg:  92    Phys reg:  -1            Arch reg:  92    Phys reg:  -1
+Arch reg:  93    Phys reg:  -1            Arch reg:  93    Phys reg:  -1
+Arch reg:  94    Phys reg:  -1            Arch reg:  94    Phys reg:  -1
+Arch reg:  95    Phys reg:  -1            Arch reg:  95    Phys reg:  -1
+Arch reg:  96    Phys reg:  -1            Arch reg:  96    Phys reg:  -1
+Arch reg:  97    Phys reg:  -1            Arch reg:  97    Phys reg:  -1
+Arch reg:  98    Phys reg:  -1            Arch reg:  98    Phys reg:  -1
+Arch reg:  99    Phys reg:  -1            Arch reg:  99    Phys reg:  -1
+Arch reg: 100    Phys reg:  -1            Arch reg: 100    Phys reg:  -1
+Arch reg: 101    Phys reg:  -1            Arch reg: 101    Phys reg:  -1
+Arch reg: 102    Phys reg:  -1            Arch reg: 102    Phys reg:  -1
+Arch reg: 103    Phys reg:  -1            Arch reg: 103    Phys reg:  -1
+Arch reg: 104    Phys reg:  -1            Arch reg: 104    Phys reg:  -1
+Arch reg: 105    Phys reg:  -1            Arch reg: 105    Phys reg:  -1
+Arch reg: 106    Phys reg:  -1            Arch reg: 106    Phys reg:  -1
+Arch reg: 107    Phys reg:  -1            Arch reg: 107    Phys reg:  -1
+Arch reg: 108    Phys reg:  -1            Arch reg: 108    Phys reg:  -1
+Arch reg: 109    Phys reg:  -1            Arch reg: 109    Phys reg:  -1
+Arch reg: 110    Phys reg:  -1            Arch reg: 110    Phys reg:  -1
+Arch reg: 111    Phys reg:  -1            Arch reg: 111    Phys reg:  -1
+Arch reg: 112    Phys reg:  -1            Arch reg: 112    Phys reg:  -1
+Arch reg: 113    Phys reg:  -1            Arch reg: 113    Phys reg:  -1
+Arch reg: 114    Phys reg:  -1            Arch reg: 114    Phys reg:  -1
+Arch reg: 115    Phys reg:  -1            Arch reg: 115    Phys reg:  -1
+Arch reg: 116    Phys reg:  -1            Arch reg: 116    Phys reg:  -1
+Arch reg: 117    Phys reg:  -1            Arch reg: 117    Phys reg:  -1
+Arch reg: 118    Phys reg:  -1            Arch reg: 118    Phys reg:  -1
+Arch reg: 119    Phys reg:  -1            Arch reg: 119    Phys reg:  -1
+Arch reg: 120    Phys reg:  -1            Arch reg: 120    Phys reg:  -1
+Arch reg: 121    Phys reg:  -1            Arch reg: 121    Phys reg:  -1
+Arch reg: 122    Phys reg:  -1            Arch reg: 122    Phys reg:  -1
+Arch reg: 123    Phys reg:  -1            Arch reg: 123    Phys reg:  -1
+Arch reg: 124    Phys reg:  -1            Arch reg: 124    Phys reg:  -1
+Arch reg: 125    Phys reg:  -1            Arch reg: 125    Phys reg:  -1
+Arch reg: 126    Phys reg:  -1            Arch reg: 126    Phys reg:  -1
+Arch reg: 127    Phys reg:  -1            Arch reg: 127    Phys reg:  -1
+Arch reg: 128    Phys reg:  -1            Arch reg: 128    Phys reg:  -1
+Arch reg: 129    Phys reg:  -1            Arch reg: 129    Phys reg:  -1
+Arch reg: 130    Phys reg:  -1            Arch reg: 130    Phys reg:  -1
+Arch reg: 131    Phys reg:  -1            Arch reg: 131    Phys reg:  -1
+Arch reg: 132    Phys reg:  -1            Arch reg: 132    Phys reg:  -1
+Arch reg: 133    Phys reg:  -1            Arch reg: 133    Phys reg:  -1
+Arch reg: 134    Phys reg:  -1            Arch reg: 134    Phys reg:  -1
+Arch reg: 135    Phys reg:  -1            Arch reg: 135    Phys reg:  -1
+Arch reg: 136    Phys reg:  -1            Arch reg: 136    Phys reg:  -1
+Arch reg: 137    Phys reg:  -1            Arch reg: 137    Phys reg:  -1
+Arch reg: 138    Phys reg:  -1            Arch reg: 138    Phys reg:  -1
+Arch reg: 139    Phys reg:  -1            Arch reg: 139    Phys reg:  -1
+Arch reg: 140    Phys reg:  -1            Arch reg: 140    Phys reg:  -1
+Arch reg: 141    Phys reg:  -1            Arch reg: 141    Phys reg:  -1
+Arch reg: 142    Phys reg:  -1            Arch reg: 142    Phys reg:  -1
+Arch reg: 143    Phys reg:  -1            Arch reg: 143    Phys reg:  -1
+Arch reg: 144    Phys reg:  -1            Arch reg: 144    Phys reg:  -1
+Arch reg: 145    Phys reg:  -1            Arch reg: 145    Phys reg:  -1
+Arch reg: 146    Phys reg:  -1            Arch reg: 146    Phys reg:  -1
+Arch reg: 147    Phys reg:  -1            Arch reg: 147    Phys reg:  -1
+Arch reg: 148    Phys reg:  -1            Arch reg: 148    Phys reg:  -1
+Arch reg: 149    Phys reg:  -1            Arch reg: 149    Phys reg:  -1
+Arch reg: 150    Phys reg:  -1            Arch reg: 150    Phys reg:  -1
+Arch reg: 151    Phys reg:  -1            Arch reg: 151    Phys reg:  -1
+Arch reg: 152    Phys reg:  -1            Arch reg: 152    Phys reg:  -1
+Arch reg: 153    Phys reg:  -1            Arch reg: 153    Phys reg:  -1
+Arch reg: 154    Phys reg:  -1            Arch reg: 154    Phys reg:  -1
+Arch reg: 155    Phys reg:  -1            Arch reg: 155    Phys reg:  -1
+Arch reg: 156    Phys reg:  -1            Arch reg: 156    Phys reg:  -1
+Arch reg: 157    Phys reg:  -1            Arch reg: 157    Phys reg:  -1
+Arch reg: 158    Phys reg:  -1            Arch reg: 158    Phys reg:  -1
+Arch reg: 159    Phys reg:  -1            Arch reg: 159    Phys reg:  -1
+Arch reg: 160    Phys reg:  -1            Arch reg: 160    Phys reg:  -1
+Arch reg: 161    Phys reg:  -1            Arch reg: 161    Phys reg:  -1
+Arch reg: 162    Phys reg:  -1            Arch reg: 162    Phys reg:  -1
+Arch reg: 163    Phys reg:  -1            Arch reg: 163    Phys reg:  -1
+Arch reg: 164    Phys reg:  -1            Arch reg: 164    Phys reg:  -1
+Arch reg: 165    Phys reg:  -1            Arch reg: 165    Phys reg:  -1
+Arch reg: 166    Phys reg:  -1            Arch reg: 166    Phys reg:  -1
+Arch reg: 167    Phys reg:  -1            Arch reg: 167    Phys reg:  -1
+Arch reg: 168    Phys reg:  -1            Arch reg: 168    Phys reg:  -1
+Arch reg: 169    Phys reg:  -1            Arch reg: 169    Phys reg:  -1
+Arch reg: 170    Phys reg:  -1            Arch reg: 170    Phys reg:  -1
+Arch reg: 171    Phys reg:  -1            Arch reg: 171    Phys reg:  -1
+Arch reg: 172    Phys reg:  -1            Arch reg: 172    Phys reg:  -1
+Arch reg: 173    Phys reg:  -1            Arch reg: 173    Phys reg:  -1
+Arch reg: 174    Phys reg:  -1            Arch reg: 174    Phys reg:  -1
+Arch reg: 175    Phys reg:  -1            Arch reg: 175    Phys reg:  -1
+Arch reg: 176    Phys reg:  -1            Arch reg: 176    Phys reg:  -1
+Arch reg: 177    Phys reg:  -1            Arch reg: 177    Phys reg:  -1
+Arch reg: 178    Phys reg:  -1            Arch reg: 178    Phys reg:  -1
+Arch reg: 179    Phys reg:  -1            Arch reg: 179    Phys reg:  -1
+Arch reg: 180    Phys reg:  -1            Arch reg: 180    Phys reg:  -1
+Arch reg: 181    Phys reg:  -1            Arch reg: 181    Phys reg:  -1
+Arch reg: 182    Phys reg:  -1            Arch reg: 182    Phys reg:  -1
+Arch reg: 183    Phys reg:  -1            Arch reg: 183    Phys reg:  -1
+Arch reg: 184    Phys reg:  -1            Arch reg: 184    Phys reg:  -1
+Arch reg: 185    Phys reg:  -1            Arch reg: 185    Phys reg:  -1
+Arch reg: 186    Phys reg:  -1            Arch reg: 186    Phys reg:  -1
+Arch reg: 187    Phys reg:  -1            Arch reg: 187    Phys reg:  -1
+Arch reg: 188    Phys reg:  -1            Arch reg: 188    Phys reg:  -1
+Arch reg: 189    Phys reg:  -1            Arch reg: 189    Phys reg:  -1
+Arch reg: 190    Phys reg:  -1            Arch reg: 190    Phys reg:  -1
+Arch reg: 191    Phys reg:  -1            Arch reg: 191    Phys reg:  -1
+Arch reg: 192    Phys reg:  -1            Arch reg: 192    Phys reg:  -1
+Arch reg: 193    Phys reg:  -1            Arch reg: 193    Phys reg:  -1
+Arch reg: 194    Phys reg:  -1            Arch reg: 194    Phys reg:  -1
+Arch reg: 195    Phys reg:  -1            Arch reg: 195    Phys reg:  -1
+Arch reg: 196    Phys reg:  -1            Arch reg: 196    Phys reg:  -1
+Arch reg: 197    Phys reg:  -1            Arch reg: 197    Phys reg:  -1
+Arch reg: 198    Phys reg:  -1            Arch reg: 198    Phys reg:  -1
+Arch reg: 199    Phys reg:  -1            Arch reg: 199    Phys reg:  -1
+Arch reg: 200    Phys reg:  -1            Arch reg: 200    Phys reg:  -1
+Arch reg: 201    Phys reg:  -1            Arch reg: 201    Phys reg:  -1
+Arch reg: 202    Phys reg:  -1            Arch reg: 202    Phys reg:  -1
+Arch reg: 203    Phys reg:  -1            Arch reg: 203    Phys reg:  -1
+Arch reg: 204    Phys reg:  -1            Arch reg: 204    Phys reg:  -1
+Arch reg: 205    Phys reg:  -1            Arch reg: 205    Phys reg:  -1
+Arch reg: 206    Phys reg:  -1            Arch reg: 206    Phys reg:  -1
+Arch reg: 207    Phys reg:  -1            Arch reg: 207    Phys reg:  -1
+Arch reg: 208    Phys reg:  -1            Arch reg: 208    Phys reg:  -1
+Arch reg: 209    Phys reg:  -1            Arch reg: 209    Phys reg:  -1
+Arch reg: 210    Phys reg:  -1            Arch reg: 210    Phys reg:  -1
+Arch reg: 211    Phys reg:  -1            Arch reg: 211    Phys reg:  -1
+Arch reg: 212    Phys reg:  -1            Arch reg: 212    Phys reg:  -1
+Arch reg: 213    Phys reg:  -1            Arch reg: 213    Phys reg:  -1
+Arch reg: 214    Phys reg:  -1            Arch reg: 214    Phys reg:  -1
+Arch reg: 215    Phys reg:  -1            Arch reg: 215    Phys reg:  -1
+Arch reg: 216    Phys reg:  -1            Arch reg: 216    Phys reg:  -1
+Arch reg: 217    Phys reg:  -1            Arch reg: 217    Phys reg:  -1
+Arch reg: 218    Phys reg:  -1            Arch reg: 218    Phys reg:  -1
+Arch reg: 219    Phys reg:  -1            Arch reg: 219    Phys reg:  -1
+Arch reg: 220    Phys reg:  -1            Arch reg: 220    Phys reg:  -1
+Arch reg: 221    Phys reg:  -1            Arch reg: 221    Phys reg:  -1
+Arch reg: 222    Phys reg:  -1            Arch reg: 222    Phys reg:  -1
+Arch reg: 223    Phys reg:  -1            Arch reg: 223    Phys reg:  -1
+Arch reg: 224    Phys reg:  -1            Arch reg: 224    Phys reg:  -1
+Arch reg: 225    Phys reg:  -1            Arch reg: 225    Phys reg:  -1
+Arch reg: 226    Phys reg:  -1            Arch reg: 226    Phys reg:  -1
+Arch reg: 227    Phys reg:  -1            Arch reg: 227    Phys reg:  -1
+Arch reg: 228    Phys reg:  -1            Arch reg: 228    Phys reg:  -1
+Arch reg: 229    Phys reg:  -1            Arch reg: 229    Phys reg:  -1
+Arch reg: 230    Phys reg:  -1            Arch reg: 230    Phys reg:  -1
+Arch reg: 231    Phys reg:  -1            Arch reg: 231    Phys reg:  -1
+Arch reg: 232    Phys reg:  -1            Arch reg: 232    Phys reg:  -1
+Arch reg: 233    Phys reg:  -1            Arch reg: 233    Phys reg:  -1
+Arch reg: 234    Phys reg:  -1            Arch reg: 234    Phys reg:  -1
+Arch reg: 235    Phys reg:  -1            Arch reg: 235    Phys reg:  -1
+Arch reg: 236    Phys reg:  -1            Arch reg: 236    Phys reg:  -1
+Arch reg: 237    Phys reg:  -1            Arch reg: 237    Phys reg:  -1
+Arch reg: 238    Phys reg:  -1            Arch reg: 238    Phys reg:  -1
+Arch reg: 239    Phys reg:  -1            Arch reg: 239    Phys reg:  -1
+Arch reg: 240    Phys reg:  -1            Arch reg: 240    Phys reg:  -1
+Arch reg: 241    Phys reg:  -1            Arch reg: 241    Phys reg:  -1
+Arch reg: 242    Phys reg:  -1            Arch reg: 242    Phys reg:  -1
+Arch reg: 243    Phys reg:  -1            Arch reg: 243    Phys reg:  -1
+Arch reg: 244    Phys reg:  -1            Arch reg: 244    Phys reg:  -1
+Arch reg: 245    Phys reg:  -1            Arch reg: 245    Phys reg:  -1
+Arch reg: 246    Phys reg:  -1            Arch reg: 246    Phys reg:  -1
+Arch reg: 247    Phys reg:  -1            Arch reg: 247    Phys reg:  -1
+Arch reg: 248    Phys reg:  -1            Arch reg: 248    Phys reg:  -1
+Arch reg: 249    Phys reg:  -1            Arch reg: 249    Phys reg:  -1
+Arch reg: 250    Phys reg:  -1            Arch reg: 250    Phys reg:  -1
+Arch reg: 251    Phys reg:  -1            Arch reg: 251    Phys reg:  -1
+Arch reg: 252    Phys reg:  -1            Arch reg: 252    Phys reg:  -1
+Arch reg: 253    Phys reg:  -1            Arch reg: 253    Phys reg:  -1
+Arch reg: 254    Phys reg:  -1            Arch reg: 254    Phys reg:  -1
+Arch reg: 255    Phys reg:  -1            Arch reg: 255    Phys reg:  -1
+
+Physical Register File
+Phys reg:   0	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:   1	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:   2	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:   3	 Arch reg:  10	 Producer: 20002115	 Valid: true	 Busy: true
+Phys reg:   4	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:   5	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:   6	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:   7	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:   8	 Arch reg:  26	 Producer: 20002135	 Valid: false	 Busy: true
+Phys reg:   9	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  10	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  11	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  12	 Arch reg:  14	 Producer: 0	 Valid: true	 Busy: true
+Phys reg:  13	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  14	 Arch reg:  54	 Producer: 0	 Valid: true	 Busy: true
+Phys reg:  15	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  16	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  17	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  18	 Arch reg:   5	 Producer: 0	 Valid: true	 Busy: true
+Phys reg:  19	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  20	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  21	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  22	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  23	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  24	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  25	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  26	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  27	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  28	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  29	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  30	 Arch reg:   7	 Producer: 0	 Valid: true	 Busy: true
+Phys reg:  31	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  32	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  33	 Arch reg:  55	 Producer: 20002128	 Valid: true	 Busy: true
+Phys reg:  34	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  35	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  36	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  37	 Arch reg:  10	 Producer: 20002132	 Valid: false	 Busy: true
+Phys reg:  38	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  39	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  40	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  41	 Arch reg:  18	 Producer: 20002088	 Valid: true	 Busy: true
+Phys reg:  42	 Arch reg:  25	 Producer: 20002134	 Valid: false	 Busy: true
+Phys reg:  43	 Arch reg:  45	 Producer: 20002081	 Valid: true	 Busy: true
+Phys reg:  44	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  45	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  46	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  47	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  48	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  49	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  50	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  51	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  52	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  53	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  54	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  55	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  56	 Arch reg:  11	 Producer: 20002111	 Valid: true	 Busy: true
+Phys reg:  57	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  58	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  59	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  60	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  61	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  62	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  63	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  64	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  65	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  66	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  67	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  68	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  69	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  70	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  71	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  72	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  73	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  74	 Arch reg:  56	 Producer: 20002127	 Valid: true	 Busy: true
+Phys reg:  75	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  76	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  77	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  78	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  79	 Arch reg:   9	 Producer: 20002086	 Valid: true	 Busy: true
+Phys reg:  80	 Arch reg:   8	 Producer: 20002124	 Valid: true	 Busy: true
+Phys reg:  81	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  82	 Arch reg:  13	 Producer: 20002090	 Valid: true	 Busy: true
+Phys reg:  83	 Arch reg:  30	 Producer: 0	 Valid: true	 Busy: true
+Phys reg:  84	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  85	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  86	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  87	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  88	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  89	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  90	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  91	 Arch reg:   6	 Producer: 0	 Valid: true	 Busy: true
+Phys reg:  92	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  93	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  94	 Arch reg:  25	 Producer: 20002129	 Valid: true	 Busy: true
+Phys reg:  95	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  96	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  97	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  98	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg:  99	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 100	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 101	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 102	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 103	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 104	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 105	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 106	 Arch reg:   3	 Producer: 20002116	 Valid: true	 Busy: true
+Phys reg: 107	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 108	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 109	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 110	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 111	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 112	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 113	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 114	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 115	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 116	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 117	 Arch reg:  11	 Producer: 20002133	 Valid: false	 Busy: true
+Phys reg: 118	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 119	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 120	 Arch reg:  26	 Producer: 20002130	 Valid: true	 Busy: true
+Phys reg: 121	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 122	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 123	 Arch reg:   4	 Producer: 20002131	 Valid: true	 Busy: true
+Phys reg: 124	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 125	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 126	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+Phys reg: 127	 Arch reg: 255	 Producer: 0	 Valid: false	 Busy: false
+
+[cpu0_LQ] entry:   0 empty
+[cpu0_LQ] entry:   1 empty
+[cpu0_LQ] entry:   2 instr_id: 20002132 address: 0x55ab26e75d80 fetch_issued: false event_cycle: 27697813924488816 waits on -
+[cpu0_LQ] entry:   3 instr_id: 20002133 address: 0x55ab26e75d88 fetch_issued: false event_cycle: 27697813924488816 waits on -
+[cpu0_LQ] entry:   4 empty
+[cpu0_LQ] entry:   5 empty
+[cpu0_LQ] entry:   6 empty
+[cpu0_LQ] entry:   7 empty
+[cpu0_LQ] entry:   8 empty
+[cpu0_LQ] entry:   9 empty
+[cpu0_LQ] entry:  10 empty
+[cpu0_LQ] entry:  11 empty
+[cpu0_LQ] entry:  12 empty
+[cpu0_LQ] entry:  13 empty
+[cpu0_LQ] entry:  14 empty
+[cpu0_LQ] entry:  15 empty
+[cpu0_LQ] entry:  16 empty
+[cpu0_LQ] entry:  17 empty
+[cpu0_LQ] entry:  18 empty
+[cpu0_LQ] entry:  19 empty
+[cpu0_LQ] entry:  20 empty
+[cpu0_LQ] entry:  21 empty
+[cpu0_LQ] entry:  22 empty
+[cpu0_LQ] entry:  23 empty
+[cpu0_LQ] entry:  24 empty
+[cpu0_LQ] entry:  25 empty
+[cpu0_LQ] entry:  26 empty
+[cpu0_LQ] entry:  27 empty
+[cpu0_LQ] entry:  28 empty
+[cpu0_LQ] entry:  29 empty
+[cpu0_LQ] entry:  30 empty
+[cpu0_LQ] entry:  31 empty
+[cpu0_LQ] entry:  32 empty
+[cpu0_LQ] entry:  33 empty
+[cpu0_LQ] entry:  34 empty
+[cpu0_LQ] entry:  35 empty
+[cpu0_LQ] entry:  36 empty
+[cpu0_LQ] entry:  37 empty
+[cpu0_LQ] entry:  38 empty
+[cpu0_LQ] entry:  39 empty
+[cpu0_LQ] entry:  40 empty
+[cpu0_LQ] entry:  41 empty
+[cpu0_LQ] entry:  42 empty
+[cpu0_LQ] entry:  43 empty
+[cpu0_LQ] entry:  44 empty
+[cpu0_LQ] entry:  45 empty
+[cpu0_LQ] entry:  46 empty
+[cpu0_LQ] entry:  47 empty
+[cpu0_LQ] entry:  48 empty
+[cpu0_LQ] entry:  49 empty
+[cpu0_LQ] entry:  50 empty
+[cpu0_LQ] entry:  51 empty
+[cpu0_LQ] entry:  52 empty
+[cpu0_LQ] entry:  53 empty
+[cpu0_LQ] entry:  54 empty
+[cpu0_LQ] entry:  55 empty
+[cpu0_LQ] entry:  56 empty
+[cpu0_LQ] entry:  57 empty
+[cpu0_LQ] entry:  58 empty
+[cpu0_LQ] entry:  59 empty
+[cpu0_LQ] entry:  60 empty
+[cpu0_LQ] entry:  61 empty
+[cpu0_LQ] entry:  62 empty
+[cpu0_LQ] entry:  63 empty
+
+cpu0_SQ empty
+
+cpu0_STLB_MSHR empty
+
+cpu0_STLB_tags empty
+
+cpu0_STLB_translation empty
+
+cpu0_STLB_RQ empty
+
+cpu0_STLB_WQ empty
+
+cpu0_STLB_PQ empty
+
+cpu0_STLB_RQ empty
+
+cpu0_STLB_WQ empty
+
+cpu0_STLB_PQ empty
+
+cpu0_STLB_RQ empty
+
+cpu0_STLB_WQ empty
+
+cpu0_STLB_PQ empty
+
+cpu0_L2C_MSHR empty
+
+cpu0_L2C_tags empty
+
+cpu0_L2C_translation empty
+
+cpu0_L2C_RQ empty
+
+cpu0_L2C_WQ empty
+
+cpu0_L2C_PQ empty
+
+cpu0_L2C_RQ empty
+
+cpu0_L2C_WQ empty
+
+cpu0_L2C_PQ empty
+
+cpu0_L1I_MSHR empty
+
+cpu0_L1I_tags empty
+
+cpu0_L1I_translation empty
+
+cpu0_L1I_RQ empty
+
+cpu0_L1I_WQ empty
+
+cpu0_L1I_PQ empty
+
+cpu0_L1D_MSHR empty
+
+cpu0_L1D_tags empty
+
+cpu0_L1D_translation empty
+
+cpu0_L1D_RQ empty
+
+cpu0_L1D_WQ empty
+
+cpu0_L1D_PQ empty
+
+cpu0_L1D_RQ empty
+
+cpu0_L1D_WQ empty
+
+cpu0_L1D_PQ empty
+
+cpu0_ITLB_MSHR empty
+
+cpu0_ITLB_tags empty
+
+cpu0_ITLB_translation empty
+
+cpu0_ITLB_RQ empty
+
+cpu0_ITLB_WQ empty
+
+cpu0_ITLB_PQ empty
+
+cpu0_DTLB_MSHR empty
+
+cpu0_DTLB_tags empty
+
+cpu0_DTLB_translation empty
+
+cpu0_DTLB_RQ empty
+
+cpu0_DTLB_WQ empty
+
+cpu0_DTLB_PQ empty
+
+LLC_MSHR empty
+
+LLC_tags empty
+
+LLC_translation empty
+
+LLC_RQ empty
+
+LLC_WQ empty
+
+LLC_PQ empty
+
+cpu0_PTW_MSHR empty
+
+DRAM Channel 0
+[RQ] entry:   0 empty
+[RQ] entry:   1 empty
+[RQ] entry:   2 empty
+[RQ] entry:   3 empty
+[RQ] entry:   4 empty
+[RQ] entry:   5 empty
+[RQ] entry:   6 empty
+[RQ] entry:   7 empty
+[RQ] entry:   8 em
