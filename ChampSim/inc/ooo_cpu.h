@@ -97,7 +97,7 @@ public:
 
   // ---- global CRISP switch & debug flag ----
   bool crisp_enable = true;           // set false to disable logic quickly
-  bool crisp_debug  = true;          // toggle verbose logs
+  bool crisp_debug  = false;          // toggle verbose logs
 
   // === CRISP statistics ===
   uint64_t stat_crisp_marked = 0;         // total number of instructions marked critical
@@ -126,8 +126,8 @@ public:
   std::unordered_map<uint64_t, uint64_t> last_addr_by_pc;       // PC→last accessed addr
 
   // ---- tuning constants ----
-  static constexpr uint64_t MISS_LATENCY_THRESHOLD = 100;   // cycles
-  static constexpr uint64_t LATENCY_THRESHOLD = 100;        // mark critical
+  static constexpr uint64_t MISS_LATENCY_THRESHOLD = 70;   // cycles
+  static constexpr uint64_t LATENCY_THRESHOLD = 70;        // mark critical
   static constexpr size_t   CST_MAX_ENTRIES = 512;
   static constexpr size_t   MAX_SLICE_DEPTH = 16;
 

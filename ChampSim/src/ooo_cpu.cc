@@ -478,15 +478,6 @@ long O3_CPU::dispatch_instruction()
         // ✅ Proceed with dispatch (no renaming here)
         ROB.push_back(std::move(instr));
         auto& rob_instr = ROB.back();
-        // ---- CRISP: Mark new instances of known critical PCs ----
-        if (crisp_enable) {
-          uint64_t pc_val = rob_instr.ip.to<uint64_t>();
-          if (critical_pc_table.count(pc_val) && critical_pc_table[pc_val]) {
-            rob_instr.is_critical = true;
-            if (crisp_debug)
-              fmt::print("CPU{}: [CRISP] 🔁 Re-marked new critical instance @PC=0x{:x}\n", cpu, pc_val);
-          }
-        }
 
         rob_instr.dispatch_time = current_time;
         rob_instr.dispatch_cycle = current_time.time_since_epoch() / clock_period;
