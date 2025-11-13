@@ -107,7 +107,7 @@ public:
 
   // === CRISP dynamic adaptation ===
   double avg_mem_latency = 0.0;
-  const double crisp_alpha = 0.1; // smoothing factor for moving average
+  double crisp_alpha = 0.08; // smoothing factor for moving average
 
   // ---- delinquent-load & slice tracking ----
   struct SliceEntry {
@@ -126,10 +126,10 @@ public:
   std::unordered_map<uint64_t, uint64_t> last_addr_by_pc;       // PC→last accessed addr
 
   // ---- tuning constants ----
-  static constexpr uint64_t MISS_LATENCY_THRESHOLD = 70;   // cycles
-  static constexpr uint64_t LATENCY_THRESHOLD = 70;        // mark critical
+  uint64_t MISS_LATENCY_THRESHOLD = 60;   // cycles
+  uint64_t LATENCY_THRESHOLD = 120;        // mark critical
   static constexpr size_t   CST_MAX_ENTRIES = 512;
-  static constexpr size_t   MAX_SLICE_DEPTH = 16;
+  static constexpr size_t   MAX_SLICE_DEPTH = 32;
 
   // ---- helper prototypes (implemented in .cc) ----
   void build_slice_and_mark_critical(uint64_t pc, uint64_t instr_id);

@@ -133,12 +133,12 @@ int main(int argc, char** argv) // NOLINT(bugprone-exception-escape)
   for (CACHE& cache : gen_environment.cache_view()) {
     cache.impl_replacement_final_stats();
   }
-  // --- CRISP: print summary per CPU ---
-  for (O3_CPU& cpu : gen_environment.cpu_view()) {
-    if (cpu.crisp_enable) {
-      cpu.print_crisp_stats();
-    }
-  }
+  // // --- CRISP: print summary per CPU ---
+  // for (O3_CPU& cpu : gen_environment.cpu_view()) {
+  //   if (cpu.crisp_enable) {
+  //     cpu.print_crisp_stats();
+  //   }
+  // }
 
   if (json_option->count() > 0) {
     if (json_file_name.empty()) {

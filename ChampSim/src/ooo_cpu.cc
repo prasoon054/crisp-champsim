@@ -36,7 +36,7 @@ constexpr long long STAT_PRINTING_PERIOD = 10000000;
 
 long O3_CPU::operate()
 {
-  long progress{0};
+  long progress{ 0 };
   progress += retire_rob();                    // retire
   progress += complete_inflight_instruction(); // finalize execution
   progress += execute_instruction();           // execute instructions
@@ -55,14 +55,14 @@ long O3_CPU::operate()
   // heartbeat
   if (show_heartbeat && (num_retired >= (last_heartbeat_instr + STAT_PRINTING_PERIOD))) {
     using double_duration = std::chrono::duration<double, typename champsim::chrono::picoseconds::period>;
-    auto heartbeat_instr{std::ceil(num_retired - last_heartbeat_instr)};
-    auto heartbeat_cycle{double_duration{current_time - last_heartbeat_time} / clock_period};
+    auto heartbeat_instr{ std::ceil(num_retired - last_heartbeat_instr) };
+    auto heartbeat_cycle{ double_duration{current_time - last_heartbeat_time} / clock_period };
 
-    auto phase_instr{std::ceil(num_retired - begin_phase_instr)};
-    auto phase_cycle{double_duration{current_time - begin_phase_time} / clock_period};
+    auto phase_instr{ std::ceil(num_retired - begin_phase_instr) };
+    auto phase_cycle{ double_duration{current_time - begin_phase_time} / clock_period };
 
     fmt::print("Heartbeat CPU {} instructions: {} cycles: {} heartbeat IPC: {:.4g} cumulative IPC: {:.4g} (Simulation time: {:%H hr %M min %S sec})\n", cpu,
-               num_retired, current_time.time_since_epoch() / clock_period, heartbeat_instr / heartbeat_cycle, phase_instr / phase_cycle, elapsed_time());
+      num_retired, current_time.time_since_epoch() / clock_period, heartbeat_instr / heartbeat_cycle, phase_instr / phase_cycle, elapsed_time());
 
     last_heartbeat_instr = num_retired;
     last_heartbeat_time = current_time;
@@ -79,16 +79,16 @@ void O3_CPU::initialize()
 
   impl_initialize_branch_predictor();
   impl_initialize_btb();
-    // --- CRISP initialization ---
+  // --- CRISP initialization ---
   if (crisp_enable) {
-      last_writer.assign(REGISTER_FILE_SIZE, 0);
-      recent_instrs.clear();
-      critical_slice_table.clear();
-      last_addr_by_pc.clear();
-      stat_crisp_critical_loads = 0;
-      if (crisp_debug)
-          fmt::print("CPU{}: [CRISP] initialized tables ({} regs)\n",
-                     cpu, REGISTER_FILE_SIZE);
+    last_writer.assign(REGISTER_FILE_SIZE, 0);
+    recent_instrs.clear();
+    critical_slice_table.clear();
+    last_addr_by_pc.clear();
+    stat_crisp_critical_loads = 0;
+    if (crisp_debug)
+      fmt::print("CPU{}: [CRISP] initialized tables ({} regs)\n",
+        cpu, REGISTER_FILE_SIZE);
   }
   // --- end CRISP init ---
 
@@ -127,7 +127,7 @@ void O3_CPU::end_phase(unsigned finished_cpu)
 void O3_CPU::initialize_instruction()
 {
   champsim::bandwidth instrs_to_read_this_cycle{
-      std::min(FETCH_WIDTH, champsim::bandwidth::maximum_type{static_cast<long>(IFETCH_BUFFER_SIZE - std::size(IFETCH_BUFFER))})};
+      std::min(FETCH_WIDTH, champsim::bandwidth::maximum_type{static_cast<long>(IFETCH_BUFFER_SIZE - std::size(IFETCH_BUFFER))}) };
 
   bool stop_fetch = false;
   while (current_time >= fetch_resume_time && instrs_to_read_this_cycle.has_remaining() && !stop_fetch && !std::empty(input_queue)) {
@@ -145,25 +145,25 @@ void O3_CPU::initialize_instruction()
 
 namespace
 {
-void do_stack_pointer_folding(ooo_model_instr& arch_instr)
-{
-  // The exact, true value of the stack pointer for any given instruction can usually be determined immediately after the instruction is decoded without
-  // waiting for the stack pointer's dependency chain to be resolved.
-  bool writes_sp = (std::count(std::begin(arch_instr.destination_registers), std::end(arch_instr.destination_registers), champsim::REG_STACK_POINTER) > 0);
-  if (writes_sp) {
-    // Avoid creating register dependencies on the stack pointer for calls, returns, pushes, and pops, but not for variable-sized changes in the
-    // stack pointer position. reads_other indicates that the stack pointer is being changed by a variable amount, which can't be determined before
-    // execution.
-    bool reads_other =
+  void do_stack_pointer_folding(ooo_model_instr& arch_instr)
+  {
+    // The exact, true value of the stack pointer for any given instruction can usually be determined immediately after the instruction is decoded without
+    // waiting for the stack pointer's dependency chain to be resolved.
+    bool writes_sp = (std::count(std::begin(arch_instr.destination_registers), std::end(arch_instr.destination_registers), champsim::REG_STACK_POINTER) > 0);
+    if (writes_sp) {
+      // Avoid creating register dependencies on the stack pointer for calls, returns, pushes, and pops, but not for variable-sized changes in the
+      // stack pointer position. reads_other indicates that the stack pointer is being changed by a variable amount, which can't be determined before
+      // execution.
+      bool reads_other =
         (std::count_if(std::begin(arch_instr.source_registers), std::end(arch_instr.source_registers),
-                       [](auto r) { return r != champsim::REG_STACK_POINTER && r != champsim::REG_FLAGS && r != champsim::REG_INSTRUCTION_POINTER; })
+          [](auto r) { return r != champsim::REG_STACK_POINTER && r != champsim::REG_FLAGS && r != champsim::REG_INSTRUCTION_POINTER; })
          > 0);
-    if ((arch_instr.is_branch) || !(std::empty(arch_instr.destination_memory) && std::empty(arch_instr.source_memory)) || (!reads_other)) {
-      auto nonsp_end = std::remove(std::begin(arch_instr.destination_registers), std::end(arch_instr.destination_registers), champsim::REG_STACK_POINTER);
-      arch_instr.destination_registers.erase(nonsp_end, std::end(arch_instr.destination_registers));
+         if ((arch_instr.is_branch) || !(std::empty(arch_instr.destination_memory) && std::empty(arch_instr.source_memory)) || (!reads_other)) {
+           auto nonsp_end = std::remove(std::begin(arch_instr.destination_registers), std::end(arch_instr.destination_registers), champsim::REG_STACK_POINTER);
+           arch_instr.destination_registers.erase(nonsp_end, std::end(arch_instr.destination_registers));
+         }
     }
   }
-}
 } // namespace
 
 bool O3_CPU::do_predict_branch(ooo_model_instr& arch_instr)
@@ -187,8 +187,8 @@ bool O3_CPU::do_predict_branch(ooo_model_instr& arch_instr)
     l1i->impl_prefetcher_branch_operate(arch_instr.ip, arch_instr.branch, predicted_branch_target);
 
     if (predicted_branch_target != arch_instr.branch_target
-        || (((arch_instr.branch == BRANCH_CONDITIONAL) || (arch_instr.branch == BRANCH_OTHER))
-            && arch_instr.branch_taken != arch_instr.branch_prediction)) { // conditional branches are re-evaluated at decode when the target is computed
+      || (((arch_instr.branch == BRANCH_CONDITIONAL) || (arch_instr.branch == BRANCH_OTHER))
+        && arch_instr.branch_taken != arch_instr.branch_prediction)) { // conditional branches are re-evaluated at decode when the target is computed
       sim_stats.total_rob_occupancy_at_branch_mispredict += std::size(ROB);
       sim_stats.branch_type_misses.increment(arch_instr.branch);
       if (!warmup) {
@@ -196,7 +196,8 @@ bool O3_CPU::do_predict_branch(ooo_model_instr& arch_instr)
         stop_fetch = true;
         arch_instr.branch_mispredicted = true;
       }
-    } else {
+    }
+    else {
       stop_fetch = arch_instr.branch_taken; // if correctly predicted taken, then we can't fetch anymore instructions this cycle
     }
 
@@ -223,7 +224,7 @@ long O3_CPU::check_dib()
 {
   // scan through IFETCH_BUFFER to find instructions that hit in the decoded instruction buffer
   auto begin = std::find_if(std::begin(IFETCH_BUFFER), std::end(IFETCH_BUFFER), [](const ooo_model_instr& x) { return !x.dib_checked; });
-  auto [window_begin, window_end] = champsim::get_span(begin, std::end(IFETCH_BUFFER), champsim::bandwidth{FETCH_WIDTH});
+  auto [window_begin, window_end] = champsim::get_span(begin, std::end(IFETCH_BUFFER), champsim::bandwidth{ FETCH_WIDTH });
   std::for_each(window_begin, window_end, [this](auto& ifetch_entry) { this->do_check_dib(ifetch_entry); });
   return std::distance(window_begin, window_end);
 }
@@ -247,26 +248,26 @@ void O3_CPU::do_check_dib(ooo_model_instr& instr)
 
   if constexpr (champsim::debug_print) {
     fmt::print("[DIB] {} instr_id: {} ip: {} hit: {} cycle: {}\n", __func__, instr.instr_id, instr.ip, dib_result.has_value(),
-               current_time.time_since_epoch() / clock_period);
+      current_time.time_since_epoch() / clock_period);
   }
 }
 
 long O3_CPU::fetch_instruction()
 {
-  long progress{0};
+  long progress{ 0 };
 
   // Fetch a single cache line
   auto fetch_ready = [](const ooo_model_instr& x) {
     return x.dib_checked && !x.fetch_issued;
-  };
+    };
 
   // Find the chunk of instructions in the block
   auto no_match_ip = [](const auto& lhs, const auto& rhs) {
-    return champsim::block_number{lhs.ip} != champsim::block_number{rhs.ip};
-  };
+    return champsim::block_number{ lhs.ip } != champsim::block_number{ rhs.ip };
+    };
 
   auto l1i_req_begin = std::find_if(std::begin(IFETCH_BUFFER), std::end(IFETCH_BUFFER), fetch_ready);
-  for (champsim::bandwidth l1i_bw{L1I_BANDWIDTH}; l1i_bw.has_remaining() && l1i_req_begin != std::end(IFETCH_BUFFER); l1i_bw.consume()) {
+  for (champsim::bandwidth l1i_bw{ L1I_BANDWIDTH }; l1i_bw.has_remaining() && l1i_req_begin != std::end(IFETCH_BUFFER); l1i_bw.consume()) {
     auto l1i_req_end = std::adjacent_find(l1i_req_begin, std::end(IFETCH_BUFFER), no_match_ip);
     if (l1i_req_end != std::end(IFETCH_BUFFER)) {
       l1i_req_end = std::next(l1i_req_end); // adjacent_find returns the first of the non-equal elements
@@ -296,7 +297,7 @@ bool O3_CPU::do_fetch_instruction(std::deque<ooo_model_instr>::iterator begin, s
 
   if constexpr (champsim::debug_print) {
     fmt::print("[IFETCH] {} instr_id: {} ip: {} dependents: {} event_cycle: {}\n", __func__, begin->instr_id, begin->ip,
-               std::size(fetch_packet.instr_depend_on_me), begin->ready_time.time_since_epoch() / clock_period);
+      std::size(fetch_packet.instr_depend_on_me), begin->ready_time.time_since_epoch() / clock_period);
   }
 
   return L1I_bus.issue_read(fetch_packet);
@@ -306,15 +307,15 @@ long O3_CPU::promote_to_decode()
 {
   auto is_decoded = [](const ooo_model_instr& x) {
     return x.decoded;
-  };
+    };
 
   auto fetch_complete_and_ready = [time = current_time](const auto& x) {
     return x.fetch_completed && x.ready_time <= time;
-  };
+    };
 
   champsim::bandwidth available_fetch_bandwidth{
       std::min(FETCH_WIDTH, std::min(champsim::bandwidth::maximum_type{static_cast<long>(DIB_HIT_BUFFER_SIZE - std::size(DIB_HIT_BUFFER))},
-                                     champsim::bandwidth::maximum_type{static_cast<long>(DECODE_BUFFER_SIZE - std::size(DECODE_BUFFER))}))};
+                                     champsim::bandwidth::maximum_type{static_cast<long>(DECODE_BUFFER_SIZE - std::size(DECODE_BUFFER))})) };
 
   auto fetched_check_end = std::find_if(std::begin(IFETCH_BUFFER), std::end(IFETCH_BUFFER), [](const ooo_model_instr& x) { return !x.fetch_completed; });
   // find the first not fetch completed
@@ -322,11 +323,11 @@ long O3_CPU::promote_to_decode()
   auto decoded_window_end = std::stable_partition(window_begin, window_end, is_decoded); // reorder instructions
   auto mark_for_decode = [time = current_time, lat = DECODE_LATENCY, warmup = warmup](auto& x) {
     return x.ready_time = time + (warmup ? champsim::chrono::clock::duration{} : lat);
-  };
+    };
   // to DIB_HIT_BUFFER
   auto mark_for_dib = [time = current_time, lat = DIB_HIT_LATENCY, warmup = warmup](auto& x) {
     return x.ready_time = time + lat;
-  };
+    };
 
   std::for_each(window_begin, decoded_window_end, mark_for_dib); // assume DECODE_LATENCY = DIB_HIT_LATENCY
   std::move(window_begin, decoded_window_end, std::back_inserter(DIB_HIT_BUFFER));
@@ -335,7 +336,7 @@ long O3_CPU::promote_to_decode()
   std::for_each(decoded_window_end, window_end, mark_for_decode);
   std::move(decoded_window_end, window_end, std::back_inserter(DECODE_BUFFER));
 
-  long progress{std::distance(window_begin, window_end)};
+  long progress{ std::distance(window_begin, window_end) };
   IFETCH_BUFFER.erase(window_begin, window_end);
   return progress;
 }
@@ -343,39 +344,40 @@ long O3_CPU::decode_instruction()
 {
   auto is_ready = [time = current_time](const auto& x) {
     return x.ready_time <= time;
-  };
+    };
 
   auto dib_hit_buffer_begin = std::begin(DIB_HIT_BUFFER);
   auto dib_hit_buffer_end = dib_hit_buffer_begin;
   auto decode_buffer_begin = std::begin(DECODE_BUFFER);
   auto decode_buffer_end = decode_buffer_begin;
 
-  champsim::bandwidth available_decode_bandwidth{DECODE_WIDTH};
+  champsim::bandwidth available_decode_bandwidth{ DECODE_WIDTH };
 
   // bw move instructions to dispatch_buffer
   champsim::bandwidth available_dib_inorder_bandwidth{
-      std::min(DIB_INORDER_WIDTH, champsim::bandwidth::maximum_type{static_cast<long>(DISPATCH_BUFFER_SIZE - std::size(DISPATCH_BUFFER))})};
+      std::min(DIB_INORDER_WIDTH, champsim::bandwidth::maximum_type{static_cast<long>(DISPATCH_BUFFER_SIZE - std::size(DISPATCH_BUFFER))}) };
 
   // conditions choose how many instructions sent to dispatch_buffer
   while (dib_hit_buffer_end != std::end(DIB_HIT_BUFFER) && decode_buffer_end != std::end(DECODE_BUFFER) && available_dib_inorder_bandwidth.has_remaining()
-         && available_decode_bandwidth.has_remaining() && is_ready(std::min(*dib_hit_buffer_end, *decode_buffer_end, ooo_model_instr::program_order))) {
+    && available_decode_bandwidth.has_remaining() && is_ready(std::min(*dib_hit_buffer_end, *decode_buffer_end, ooo_model_instr::program_order))) {
     if (ooo_model_instr::program_order(*dib_hit_buffer_end, *decode_buffer_end)) {
       dib_hit_buffer_end++;
       available_dib_inorder_bandwidth.consume();
-    } else {
+    }
+    else {
       decode_buffer_end++;
       available_dib_inorder_bandwidth.consume();
       available_decode_bandwidth.consume();
     }
   }
   while (dib_hit_buffer_end != std::end(DIB_HIT_BUFFER) && available_dib_inorder_bandwidth.has_remaining() && is_ready(*dib_hit_buffer_end)
-         && (decode_buffer_end == std::end(DECODE_BUFFER) || ooo_model_instr::program_order(*dib_hit_buffer_end, *decode_buffer_end))) {
+    && (decode_buffer_end == std::end(DECODE_BUFFER) || ooo_model_instr::program_order(*dib_hit_buffer_end, *decode_buffer_end))) {
     dib_hit_buffer_end++;
     available_dib_inorder_bandwidth.consume();
   }
   while (decode_buffer_end != std::end(DECODE_BUFFER) && available_dib_inorder_bandwidth.has_remaining() && available_decode_bandwidth.has_remaining()
-         && is_ready(*decode_buffer_end)
-         && (dib_hit_buffer_end == std::end(DIB_HIT_BUFFER) || ooo_model_instr::program_order(*decode_buffer_end, *dib_hit_buffer_end))) {
+    && is_ready(*decode_buffer_end)
+    && (dib_hit_buffer_end == std::end(DIB_HIT_BUFFER) || ooo_model_instr::program_order(*decode_buffer_end, *dib_hit_buffer_end))) {
     decode_buffer_end++;
     available_dib_inorder_bandwidth.consume();
     available_decode_bandwidth.consume();
@@ -389,7 +391,7 @@ long O3_CPU::decode_instruction()
     if (db_entry.branch_mispredicted) {
       // These branches detect the misprediction at decode
       if ((db_entry.branch == BRANCH_DIRECT_JUMP) || (db_entry.branch == BRANCH_DIRECT_CALL)
-          || (((db_entry.branch == BRANCH_CONDITIONAL) || (db_entry.branch == BRANCH_OTHER)) && db_entry.branch_taken == db_entry.branch_prediction)) {
+        || (((db_entry.branch == BRANCH_CONDITIONAL) || (db_entry.branch == BRANCH_OTHER)) && db_entry.branch_taken == db_entry.branch_prediction)) {
         // clear the branch_mispredicted bit so we don't attempt to resume fetch again at execute
         db_entry.branch_mispredicted = 0;
         // pay misprediction penalty
@@ -402,19 +404,19 @@ long O3_CPU::decode_instruction()
     if constexpr (champsim::debug_print) {
       fmt::print("[DECODE] do_decode instr_id: {} time: {}\n", db_entry.instr_id, this->current_time.time_since_epoch() / this->clock_period);
     }
-  };
+    };
 
   auto do_dib_hit = [&, this](auto& dib_entry) {
     dib_entry.ready_time = this->current_time + (this->warmup ? champsim::chrono::clock::duration{} : this->DISPATCH_LATENCY);
-  };
+    };
 
   std::for_each(decode_buffer_begin, decode_buffer_end, do_decode);
   std::for_each(dib_hit_buffer_begin, dib_hit_buffer_end, do_dib_hit);
 
-  long progress{std::distance(dib_hit_buffer_begin, dib_hit_buffer_end) + std::distance(decode_buffer_begin, decode_buffer_end)};
+  long progress{ std::distance(dib_hit_buffer_begin, dib_hit_buffer_end) + std::distance(decode_buffer_begin, decode_buffer_end) };
 
   std::merge(dib_hit_buffer_begin, dib_hit_buffer_end, decode_buffer_begin, decode_buffer_end, std::back_inserter(DISPATCH_BUFFER),
-             ooo_model_instr::program_order);
+    ooo_model_instr::program_order);
   DECODE_BUFFER.erase(decode_buffer_begin, decode_buffer_end);
   DIB_HIT_BUFFER.erase(dib_hit_buffer_begin, dib_hit_buffer_end);
 
@@ -453,33 +455,58 @@ long O3_CPU::dispatch_instruction()
     while (available_dispatch_bandwidth.has_remaining() &&
            !DISPATCH_BUFFER.empty() &&
            DISPATCH_BUFFER.front().ready_time <= current_time &&
-           ROB.size() != ROB_SIZE &&
-           ((size_t)std::count_if(LQ.begin(), LQ.end(),
-                                  [](const auto& e) { return !e.has_value(); }) >=
-            DISPATCH_BUFFER.front().source_memory.size()) &&
-           ((DISPATCH_BUFFER.front().destination_memory.size() + SQ.size()) <= SQ_SIZE))
+           ROB.size() != ROB_SIZE)
     {
         auto instr = std::move(DISPATCH_BUFFER.front());
         DISPATCH_BUFFER.pop_front();
 
-        // ✅ Only check free registers for destination registers
-        const auto free_regs = reg_allocator.count_free_registers();
-        const size_t dests_to_alloc =
-            std::count_if(instr.destination_registers.begin(), instr.destination_registers.end(),
-                          [](int d) { return d >= 0; });
+        // ✅ Check LQ space if this is a load
+        if (!instr.source_memory.empty()) {
+            size_t loads_needed = instr.source_memory.size();
+            size_t free_lq = std::count_if(LQ.begin(), LQ.end(), [](const auto& e) { return !e.has_value(); });
+            if (free_lq < loads_needed) {
+                instr.ready_time = current_time + clock_period;
+                DISPATCH_BUFFER.push_front(std::move(instr));
+                break;
+            }
+        }
 
-        if (free_regs < dests_to_alloc) {
-            // Stall just this instruction, requeue it safely
+        // ✅ Check SQ space if this is a store
+        if ((instr.destination_memory.size() + SQ.size()) > SQ_SIZE) {
             instr.ready_time = current_time + clock_period;
             DISPATCH_BUFFER.push_front(std::move(instr));
             break;
         }
 
-        // ✅ Proceed with dispatch (no renaming here)
+        // ✅ Check register availability for destination operands
+        const auto free_regs = reg_allocator.count_free_registers();
+        const size_t dests_to_alloc = std::count_if(instr.destination_registers.begin(),
+                                                     instr.destination_registers.end(),
+                                                     [](int d) { return d >= 0; });
+
+        if (free_regs < dests_to_alloc) {
+            instr.ready_time = current_time + clock_period;
+            DISPATCH_BUFFER.push_front(std::move(instr));
+            break;
+        }
+
+        // Proceed with dispatch
         ROB.push_back(std::move(instr));
         auto& rob_instr = ROB.back();
 
         rob_instr.dispatch_time = current_time;
+
+        // Mark as critical if in known critical slice
+        if (crisp_enable) {
+            uint64_t pc = rob_instr.ip.to<uint64_t>();
+            if (critical_pc_table.find(pc) != critical_pc_table.end()) {
+                rob_instr.is_critical = true;
+                if (crisp_debug)
+                    fmt::print("CPU{}: [CRISP] 🚩 Marked new instance as critical: PC=0x{:x} ID={}\n",
+                               cpu, pc, rob_instr.instr_id);
+            }
+        }
+
         rob_instr.dispatch_cycle = current_time.time_since_epoch() / clock_period;
 
         // ---- CRISP dependency tracking ----
@@ -492,10 +519,10 @@ long O3_CPU::dispatch_instruction()
                         rob_instr.pred_instr_ids[rob_instr.pred_count++] = last;
                 }
             }
-            // for (auto dst : rob_instr.destination_registers) {
-            //     if (dst >= 0 && static_cast<size_t>(dst) < last_writer.size())
-            //         last_writer[dst] = rob_instr.instr_id;
-            // }
+            for (auto dst : rob_instr.destination_registers) {
+                if (dst >= 0 && static_cast<size_t>(dst) < last_writer.size())
+                    last_writer[dst] = rob_instr.instr_id;
+            }
             recent_instrs[rob_instr.instr_id] = &rob_instr;
         }
 
@@ -505,184 +532,37 @@ long O3_CPU::dispatch_instruction()
         available_dispatch_bandwidth.consume();
         ++dispatched;
 
-        // Safe scheduling latency
-        rob_instr.ready_time =
-            current_time + (warmup ? champsim::chrono::clock::duration{} : SCHEDULING_LATENCY);
+        // Apply scheduling latency
+        rob_instr.ready_time = current_time + (warmup ? champsim::chrono::clock::duration{} : SCHEDULING_LATENCY);
     }
 
     return dispatched;
 }
 
 
-// long O3_CPU::schedule_instruction()
-// {
-//   champsim::bandwidth search_bw{SCHEDULER_SIZE};
-//   int progress{0};
-//   for (auto rob_it = std::begin(ROB); rob_it != std::end(ROB) && search_bw.has_remaining(); ++rob_it) {
-//     // if there aren't enough physical registers available for the next instruction, stop scheduling
-//     unsigned long sources_to_allocate = std::count_if(rob_it->source_registers.begin(), rob_it->source_registers.end(),
-//                                                       [&alloc = std::as_const(reg_allocator)](auto srcreg) { return !alloc.isAllocated(srcreg); });
-//     if (reg_allocator.count_free_registers() < (sources_to_allocate + rob_it->destination_registers.size())) {
-//       break;
-//     }
-//     if (!rob_it->scheduled && rob_it->ready_time <= current_time) {
-//       do_scheduling(*rob_it);
-//       ++progress;
-//     }
-
-//     if (!rob_it->executed) {
-//       search_bw.consume();
-//     }
-//   }
-
-//   return progress;
-// }
-
 long O3_CPU::schedule_instruction()
 {
-    champsim::bandwidth search_bw{SCHEDULER_SIZE};
-    int progress = 0;
-
-    if (ROB.empty())
-        return 0;
-
-    // ======= CONFIGURABLE CONSTANTS =======
-    constexpr uint64_t STALL_DEMOTE_THRESHOLD = 500;  // demote stale criticals
-    constexpr uint64_t CRISP_MIN_FREE_REGS    = 8;    // guard for rename safety
-    constexpr double   CRISP_SCHED_RATIO      = 0.5;  // fraction of ports for criticals
-    static uint64_t crisp_stall_cycles = 0;
-    // ======================================
-
-    const auto free_regs = reg_allocator.count_free_registers();
-    if (free_regs == 0)
-        ++crisp_stall_cycles;
-    else
-        crisp_stall_cycles = 0;
-
-    const auto sched_size_num = static_cast<long>(SCHEDULER_SIZE);
-    const int crisp_bw_limit = std::max(1, int(sched_size_num * CRISP_SCHED_RATIO));
-
-    int crisp_scheduled  = 0;
-    int normal_scheduled = 0;
-
-    // Helper: compute how many source regs still need allocation for an instruction
-    auto sources_to_allocate = [this](const ooo_model_instr& ins) -> long {
-        return std::count_if(ins.source_registers.begin(), ins.source_registers.end(),
-                             [&alloc = std::as_const(reg_allocator)](auto srcreg) {
-                                 // srcreg holds an architectural register id prior to renaming
-                                 // isAllocated returns whether a physical mapping exists for this arch reg
-                                 return (srcreg >= 0) && (!alloc.isAllocated(srcreg));
-                             });
-    };
-
-    // Helper: count destination registers that need allocation (arch regs present)
-    auto dests_count = [](const ooo_model_instr& ins) -> long {
-        return std::count_if(ins.destination_registers.begin(), ins.destination_registers.end(),
-                             [](auto d) { return d >= 0; });
-    };
-
-    // ===========================
-    // STEP 1: ROB Head Guarantee
-    // ===========================
-    {
-        auto& rob_head = ROB.front();
-        if (!rob_head.scheduled && !rob_head.executed &&
-            rob_head.ready_time <= current_time)
-        {
-            // follow original ChampSim check: ensure allocator can allocate needed phys regs
-            long src_allocs = sources_to_allocate(rob_head);
-            long dests = dests_count(rob_head);
-
-            if (reg_allocator.count_free_registers() >= (src_allocs + dests)) {
-                // schedule (this will do the renaming inside do_scheduling)
-                do_scheduling(rob_head);
-                ++progress;
-
-                if (crisp_debug)
-                    fmt::print("CPU{}: [CRISP] 🚀 Scheduled ROB head id={} (guaranteed progress)\n",
-                               cpu, rob_head.instr_id);
-                search_bw.consume();
-            } else {
-                if (crisp_debug)
-                    fmt::print("CPU{}: [CRISP] ROB-head id={} needs {}+{} regs but only {} free\n",
-                               cpu, rob_head.instr_id, src_allocs, dests, reg_allocator.count_free_registers());
-            }
-        }
+  champsim::bandwidth search_bw{SCHEDULER_SIZE};
+  int progress{0};
+  for (auto rob_it = std::begin(ROB); rob_it != std::end(ROB) && search_bw.has_remaining(); ++rob_it) {
+    // if there aren't enough physical registers available for the next instruction, stop scheduling
+    unsigned long sources_to_allocate = std::count_if(rob_it->source_registers.begin(), rob_it->source_registers.end(),
+                                                      [&alloc = std::as_const(reg_allocator)](auto srcreg) { return !alloc.isAllocated(srcreg); });
+    if (reg_allocator.count_free_registers() < (sources_to_allocate + rob_it->destination_registers.size())) {
+      break;
+    }
+    if (!rob_it->scheduled && rob_it->ready_time <= current_time) {
+      do_scheduling(*rob_it);
+      ++progress;
     }
 
-    // ================================
-    // STEP 2: Critical Instruction Pass
-    // ================================
-    if (crisp_enable && search_bw.has_remaining())
-    {
-        for (auto& instr : ROB)
-        {
-            if (crisp_scheduled >= crisp_bw_limit)
-                break;
-            if (instr.executed || instr.scheduled)
-                continue;
-            if (!instr.is_critical || instr.ready_time > current_time)
-                continue;
-
-            // Avoid scheduling under extreme register pressure
-            if (reg_allocator.count_free_registers() < CRISP_MIN_FREE_REGS)
-                continue;
-
-            // Demote stale criticals (optional safety)
-            uint64_t waited = (current_time - instr.dispatch_time) / clock_period;
-            if (waited > STALL_DEMOTE_THRESHOLD) {
-                instr.is_critical = false;
-                continue;
-            }
-
-            long src_allocs = sources_to_allocate(instr);
-            long dests = dests_count(instr);
-            if (reg_allocator.count_free_registers() < (src_allocs + dests))
-                continue;
-
-            // Ready for renaming/scheduling; do_scheduling will perform the rename
-            do_scheduling(instr);
-            ++progress;
-            ++crisp_scheduled;
-            ++stat_crisp_scheduled;
-            search_bw.consume();
-
-            if (crisp_debug)
-                fmt::print("CPU{}: [CRISP] ⚡ Scheduled critical id={} PC=0x{:x}\n",
-                           cpu, instr.instr_id, instr.ip.to<uint64_t>());
-        }
+    if (!rob_it->executed) {
+      search_bw.consume();
     }
+  }
 
-    // ================================
-    // STEP 3: Non-Critical Pass
-    // ================================
-    for (auto& instr : ROB)
-    {
-        if (!search_bw.has_remaining())
-            break;
-        if (instr.scheduled || instr.executed)
-            continue;
-        if (instr.is_critical || instr.ready_time > current_time)
-            continue;
-
-        long src_allocs = sources_to_allocate(instr);
-        long dests = dests_count(instr);
-        if (reg_allocator.count_free_registers() < (src_allocs + dests))
-            continue;
-
-        do_scheduling(instr);
-        ++progress;
-        ++normal_scheduled;
-        search_bw.consume();
-    }
-
-    if (crisp_debug && progress)
-        fmt::print("CPU{}: [SCHEDULE] ✅ {} total ({}/{} critical/non)\n",
-                   cpu, progress, crisp_scheduled, normal_scheduled);
-
-    return progress;
+  return progress;
 }
-
 
 // void O3_CPU::do_scheduling(ooo_model_instr& instr)
 // {
@@ -717,23 +597,118 @@ void O3_CPU::do_scheduling(ooo_model_instr& instr)
 }
 
 
+// long O3_CPU::execute_instruction()
+// {
+//   champsim::bandwidth exec_bw{EXEC_WIDTH};
+//   for (auto rob_it = std::begin(ROB); rob_it != std::end(ROB) && exec_bw.has_remaining(); ++rob_it) {
+//     if (rob_it->scheduled && !rob_it->executed && rob_it->ready_time <= current_time) {
+//       bool ready = std::all_of(std::begin(rob_it->source_registers), std::end(rob_it->source_registers),
+//                                [&alloc = std::as_const(reg_allocator)](auto srcreg) { return alloc.isValid(srcreg); });
+//       if (ready) {
+//         do_execution(*rob_it);
+//         exec_bw.consume();
+//       }
+//     }
+//   }
+
+//   return exec_bw.amount_consumed();
+// }
+
 long O3_CPU::execute_instruction()
 {
-  champsim::bandwidth exec_bw{EXEC_WIDTH};
-  for (auto rob_it = std::begin(ROB); rob_it != std::end(ROB) && exec_bw.has_remaining(); ++rob_it) {
-    if (rob_it->scheduled && !rob_it->executed && rob_it->ready_time <= current_time) {
-      bool ready = std::all_of(std::begin(rob_it->source_registers), std::end(rob_it->source_registers),
-                               [&alloc = std::as_const(reg_allocator)](auto srcreg) { return alloc.isValid(srcreg); });
-      if (ready) {
-        do_execution(*rob_it);
-        exec_bw.consume();
-      }
+    champsim::bandwidth exec_bw{EXEC_WIDTH};
+    int progress = 0;
+
+    if (ROB.empty())
+        return 0;
+
+    // Helper lambda to check if an instruction's dependencies are met
+    auto dependency_check = [&alloc = std::as_const(reg_allocator)](const ooo_model_instr& instr) {
+        return std::all_of(instr.source_registers.begin(), instr.source_registers.end(),
+            [&alloc](auto srcreg) {
+                return srcreg < 0 || alloc.isValid(srcreg);
+            });
+    };
+
+    // ===========================================
+    // STEP 1: ROB Head Guarantee (Liveness)
+    // ===========================================
+    auto& rob_head = ROB.front();
+    if (rob_head.scheduled &&!rob_head.executed && rob_head.ready_time <= current_time) {
+        if (dependency_check(rob_head)) {
+            do_execution(rob_head);
+            exec_bw.consume();
+            ++progress;
+            
+            if (rob_head.is_critical)
+                ++stat_crisp_scheduled; // Count if ROB head was critical
+
+            if (crisp_debug)
+                fmt::print("CPU{}: [EXEC] 🚀 Executed ROB head id={} (guaranteed progress)\n",
+                           cpu, rob_head.instr_id);
+        } else {
+            if (crisp_debug)
+                fmt::print("CPU{}: ⚠️ ROB head {} blocked on source regs\n",
+                           cpu, rob_head.instr_id);
+        }
     }
-  }
 
-  return exec_bw.amount_consumed();
+    // ===========================================
+    // STEP 2: Build Ready Lists for the rest of the ROB
+    // ===========================================
+    
+    // These lists store iterators to the ready instructions in the ROB
+    std::vector<std::deque<ooo_model_instr>::iterator> ready_criticals;
+    std::vector<std::deque<ooo_model_instr>::iterator> ready_non_criticals;
+
+    // Single pass over the rest of the ROB to find all ready instructions
+    for (auto rob_it = std::next(ROB.begin()); rob_it!= ROB.end() && exec_bw.has_remaining(); ++rob_it)
+    {
+        if (rob_it->scheduled &&!rob_it->executed && rob_it->ready_time <= current_time)
+        {
+            if (dependency_check(*rob_it))
+            {
+                if (rob_it->is_critical)
+                    ready_criticals.push_back(rob_it);
+                else
+                    ready_non_criticals.push_back(rob_it);
+            }
+        }
+    }
+
+    // ===========================================
+    // STEP 3: Issue from Ready Lists (CRISP Prioritization)
+    // ===========================================
+
+    // Issue all ready critical instructions first
+    for (auto& ready_instr_it : ready_criticals)
+    {
+        if (!exec_bw.has_remaining())
+            break;
+
+        do_execution(*ready_instr_it);
+        exec_bw.consume();
+        ++progress;
+        ++stat_crisp_scheduled; // Count scheduled criticals
+
+        if (crisp_debug)
+            fmt::print("CPU{}: [EXEC] ⚡ Executed critical id={} PC=0x{:x}\n",
+                       cpu, ready_instr_it->instr_id, ready_instr_it->ip.to<uint64_t>());
+    }
+
+    // Use remaining bandwidth for non-critical instructions
+    for (auto& ready_instr_it : ready_non_criticals)
+    {
+        if (!exec_bw.has_remaining())
+            break;
+
+        do_execution(*ready_instr_it);
+        exec_bw.consume();
+        ++progress;
+    }
+
+    return progress;
 }
-
 void O3_CPU::do_execution(ooo_model_instr& instr)
 {
   instr.executed = true;
@@ -762,19 +737,27 @@ void O3_CPU::do_memory_scheduling(ooo_model_instr& instr)
 {
   // load
   for (auto& smem : instr.source_memory) {
-    auto q_entry = std::find_if_not(std::begin(LQ), std::end(LQ), [](const auto& lq_entry) { return lq_entry.has_value(); });
-    assert(q_entry != std::end(LQ));
+    auto q_entry = std::find_if_not(std::begin(LQ), std::end(LQ),
+      [](const auto& lq_entry) { return lq_entry.has_value(); });
+
+    if (q_entry == std::end(LQ)) {
+      if (crisp_debug)
+        fmt::print("CPU{}: [ERROR] No free LQ entry for instr {}\n", cpu, instr.instr_id);
+      continue; // Don't insert → must stall at dispatch
+    }
+
     q_entry->emplace(smem, instr.instr_id, instr.ip, instr.asid); // add it to the load queue
 
     // Check for forwarding
     auto sq_it = std::max_element(std::begin(SQ), std::end(SQ), [smem](const auto& lhs, const auto& rhs) {
       return lhs.virtual_address != smem || (rhs.virtual_address == smem && LSQ_ENTRY::program_order(lhs, rhs));
-    });
+      });
     if (sq_it != std::end(SQ) && sq_it->virtual_address == smem) {
       if (sq_it->fetch_issued) { // Store already executed
         (*q_entry)->finish(instr);
         q_entry->reset();
-      } else {
+      }
+      else {
         assert(sq_it->instr_id < instr.instr_id);      // The found SQ entry is a prior store
         sq_it->lq_depend_on_me.emplace_back(*q_entry); // Forward the load when the store finishes
         (*q_entry)->producer_id = sq_it->instr_id;     // The load waits on the store to finish
@@ -793,45 +776,93 @@ void O3_CPU::do_memory_scheduling(ooo_model_instr& instr)
 
   if constexpr (champsim::debug_print) {
     fmt::print("[DISPATCH] {} instr_id: {} loads: {} stores: {} cycle: {}\n", __func__, instr.instr_id, std::size(instr.source_memory),
-               std::size(instr.destination_memory), current_time.time_since_epoch() / clock_period);
+      std::size(instr.destination_memory), current_time.time_since_epoch() / clock_period);
   }
 }
 
+// long O3_CPU::operate_lsq()
+// {
+//   champsim::bandwidth store_bw{SQ_WIDTH};
+
+//   const auto complete_id = std::empty(ROB) ? std::numeric_limits<uint64_t>::max() : ROB.front().instr_id;
+//   auto do_complete = [time = current_time, finished = LSQ_ENTRY::precedes(complete_id), this](const auto& x) {
+//     return finished(x) && x.ready_time <= time && this->do_complete_store(x);
+//   };
+
+//   auto unfetched_begin = std::partition_point(std::begin(SQ), std::end(SQ), [](const auto& x) { return x.fetch_issued; });
+//   auto [fetch_begin, fetch_end] =
+//       champsim::get_span_p(unfetched_begin, std::end(SQ), store_bw, [time = current_time](const auto& x) { return !x.fetch_issued && x.ready_time <= time; });
+//   store_bw.consume(std::distance(fetch_begin, fetch_end));
+//   std::for_each(fetch_begin, fetch_end, [time = current_time, this](auto& sq_entry) {
+//     this->do_finish_store(sq_entry);
+//     sq_entry.fetch_issued = true;
+//     sq_entry.ready_time = time;
+//   });
+
+//   auto [complete_begin, complete_end] = champsim::get_span_p(std::cbegin(SQ), std::cend(SQ), store_bw, do_complete);
+//   store_bw.consume(std::distance(complete_begin, complete_end));
+//   SQ.erase(complete_begin, complete_end);
+
+//   champsim::bandwidth load_bw{LQ_WIDTH};
+
+//   for (auto& lq_entry : LQ) {
+//     if (load_bw.has_remaining() && lq_entry.has_value() && lq_entry->producer_id == std::numeric_limits<uint64_t>::max() && !lq_entry->fetch_issued
+//         && lq_entry->ready_time < current_time) {
+//       auto success = execute_load(*lq_entry);
+//       if (success) {
+//         load_bw.consume();
+//         lq_entry->fetch_issued = true;
+//       }
+//     }
+//   }
+
+//   return store_bw.amount_consumed() + load_bw.amount_consumed();
+// }
+
 long O3_CPU::operate_lsq()
 {
-  champsim::bandwidth store_bw{SQ_WIDTH};
+  champsim::bandwidth store_bw{ SQ_WIDTH };
+
 
   const auto complete_id = std::empty(ROB) ? std::numeric_limits<uint64_t>::max() : ROB.front().instr_id;
   auto do_complete = [time = current_time, finished = LSQ_ENTRY::precedes(complete_id), this](const auto& x) {
     return finished(x) && x.ready_time <= time && this->do_complete_store(x);
-  };
+    };
+
 
   auto unfetched_begin = std::partition_point(std::begin(SQ), std::end(SQ), [](const auto& x) { return x.fetch_issued; });
   auto [fetch_begin, fetch_end] =
-      champsim::get_span_p(unfetched_begin, std::end(SQ), store_bw, [time = current_time](const auto& x) { return !x.fetch_issued && x.ready_time <= time; });
+    champsim::get_span_p(unfetched_begin, std::end(SQ), store_bw, [time = current_time](const auto& x) { return !x.fetch_issued && x.ready_time <= time; });
   store_bw.consume(std::distance(fetch_begin, fetch_end));
   std::for_each(fetch_begin, fetch_end, [time = current_time, this](auto& sq_entry) {
     this->do_finish_store(sq_entry);
     sq_entry.fetch_issued = true;
     sq_entry.ready_time = time;
-  });
+    });
+
 
   auto [complete_begin, complete_end] = champsim::get_span_p(std::cbegin(SQ), std::cend(SQ), store_bw, do_complete);
   store_bw.consume(std::distance(complete_begin, complete_end));
   SQ.erase(complete_begin, complete_end);
 
-  champsim::bandwidth load_bw{LQ_WIDTH};
+
+  champsim::bandwidth load_bw{ LQ_WIDTH };
+
 
   for (auto& lq_entry : LQ) {
-    if (load_bw.has_remaining() && lq_entry.has_value() && lq_entry->producer_id == std::numeric_limits<uint64_t>::max() && !lq_entry->fetch_issued
-        && lq_entry->ready_time < current_time) {
-      auto success = execute_load(*lq_entry);
-      if (success) {
+    if (load_bw.has_remaining() && lq_entry.has_value() &&
+      lq_entry->producer_id == std::numeric_limits<uint64_t>::max() &&
+      !lq_entry->fetch_issued &&
+      lq_entry->ready_time <= current_time)
+    {
+      bool issued = execute_load(*lq_entry);
+      if (issued) {
         load_bw.consume();
         lq_entry->fetch_issued = true;
       }
     }
   }
+
 
   return store_bw.amount_consumed() + load_bw.amount_consumed();
 }
@@ -868,6 +899,20 @@ bool O3_CPU::do_complete_store(const LSQ_ENTRY& sq_entry)
   return L1D_bus.issue_write(data_packet);
 }
 
+// bool O3_CPU::execute_load(const LSQ_ENTRY& lq_entry)
+// {
+//   CacheBus::request_type data_packet;
+//   data_packet.v_address = lq_entry.virtual_address;
+//   data_packet.instr_id = lq_entry.instr_id;
+//   data_packet.ip = lq_entry.ip;
+
+//   if constexpr (champsim::debug_print) {
+//     fmt::print("[LQ] {} instr_id: {} vaddr: {}\n", __func__, data_packet.instr_id, data_packet.v_address);
+//   }
+
+//   return L1D_bus.issue_read(data_packet);
+// }
+
 bool O3_CPU::execute_load(const LSQ_ENTRY& lq_entry)
 {
   CacheBus::request_type data_packet;
@@ -875,9 +920,11 @@ bool O3_CPU::execute_load(const LSQ_ENTRY& lq_entry)
   data_packet.instr_id = lq_entry.instr_id;
   data_packet.ip = lq_entry.ip;
 
+
   if constexpr (champsim::debug_print) {
     fmt::print("[LQ] {} instr_id: {} vaddr: {}\n", __func__, data_packet.instr_id, data_packet.v_address);
   }
+
 
   return L1D_bus.issue_read(data_packet);
 }
@@ -896,31 +943,49 @@ void O3_CPU::do_complete_execution(ooo_model_instr& instr)
   }
 }
 
+// long O3_CPU::complete_inflight_instruction()
+// {
+//   // update ROB entries with completed executions
+//   champsim::bandwidth complete_bw{EXEC_WIDTH};
+//   for (auto rob_it = std::begin(ROB); rob_it != std::end(ROB) && complete_bw.has_remaining(); ++rob_it) {
+//     if (rob_it->executed && !rob_it->completed && (rob_it->ready_time <= current_time) && rob_it->completed_mem_ops == rob_it->num_mem_ops()) {
+//       do_complete_execution(*rob_it);
+//       complete_bw.consume();
+//     }
+//   }
+
+//   return complete_bw.amount_consumed();
+// }
+
+
 long O3_CPU::complete_inflight_instruction()
 {
-  // update ROB entries with completed executions
-  champsim::bandwidth complete_bw{EXEC_WIDTH};
+  champsim::bandwidth complete_bw{ EXEC_WIDTH };
   for (auto rob_it = std::begin(ROB); rob_it != std::end(ROB) && complete_bw.has_remaining(); ++rob_it) {
-    if (rob_it->executed && !rob_it->completed && (rob_it->ready_time <= current_time) && rob_it->completed_mem_ops == rob_it->num_mem_ops()) {
+    if (rob_it->executed && !rob_it->completed &&
+      rob_it->ready_time <= current_time &&
+      rob_it->completed_mem_ops == rob_it->num_mem_ops())
+    {
       do_complete_execution(*rob_it);
       complete_bw.consume();
     }
   }
+
 
   return complete_bw.amount_consumed();
 }
 
 long O3_CPU::handle_memory_return()
 {
-  long progress{0};
+  long progress{ 0 };
 
-  for (champsim::bandwidth fetch_bw{FETCH_WIDTH}, l1i_bw{L1I_BANDWIDTH};
-       fetch_bw.has_remaining() && l1i_bw.has_remaining() && !L1I_bus.lower_level->returned.empty(); l1i_bw.consume()) {
+  for (champsim::bandwidth fetch_bw{ FETCH_WIDTH }, l1i_bw{ L1I_BANDWIDTH };
+    fetch_bw.has_remaining() && l1i_bw.has_remaining() && !L1I_bus.lower_level->returned.empty(); l1i_bw.consume()) {
     auto& l1i_entry = L1I_bus.lower_level->returned.front();
 
     while (fetch_bw.has_remaining() && !l1i_entry.instr_depend_on_me.empty()) {
       auto fetched = std::find_if(std::begin(IFETCH_BUFFER), std::end(IFETCH_BUFFER), ooo_model_instr::matches_id(l1i_entry.instr_depend_on_me.front()));
-      if (fetched != std::end(IFETCH_BUFFER) && champsim::block_number{fetched->ip} == champsim::block_number{l1i_entry.v_address} && fetched->fetch_issued) {
+      if (fetched != std::end(IFETCH_BUFFER) && champsim::block_number{ fetched->ip } == champsim::block_number{ l1i_entry.v_address } && fetched->fetch_issued) {
         fetched->fetch_completed = true;
         fetch_bw.consume();
         ++progress;
@@ -941,9 +1006,9 @@ long O3_CPU::handle_memory_return()
   }
 
   auto l1d_it = std::begin(L1D_bus.lower_level->returned);
-  for (champsim::bandwidth l1d_bw{L1D_BANDWIDTH}; l1d_bw.has_remaining() && l1d_it != std::end(L1D_bus.lower_level->returned); l1d_bw.consume(), ++l1d_it) {
+  for (champsim::bandwidth l1d_bw{ L1D_BANDWIDTH }; l1d_bw.has_remaining() && l1d_it != std::end(L1D_bus.lower_level->returned); l1d_bw.consume(), ++l1d_it) {
     for (auto& lq_entry : LQ) {
-      if (lq_entry.has_value() && lq_entry->fetch_issued && champsim::block_number{lq_entry->virtual_address} == champsim::block_number{l1d_it->v_address}) {
+      if (lq_entry.has_value() && lq_entry->fetch_issued && champsim::block_number { lq_entry->virtual_address } == champsim::block_number{ l1d_it->v_address }) {
         lq_entry->finish(std::begin(ROB), std::end(ROB));
         lq_entry.reset();
         ++progress;
@@ -984,9 +1049,9 @@ long O3_CPU::handle_memory_return()
 long O3_CPU::retire_rob()
 {
   auto [retire_begin, retire_end] =
-      champsim::get_span_p(std::cbegin(ROB), std::cend(ROB),
-                           champsim::bandwidth{RETIRE_WIDTH},
-                           [](const auto& x) { return x.completed; });
+    champsim::get_span_p(std::cbegin(ROB), std::cend(ROB),
+      champsim::bandwidth{ RETIRE_WIDTH },
+      [](const auto& x) { return x.completed; });
 
   assert(std::distance(retire_begin, retire_end) >= 0);
   // uint64_t cur_cycle = current_time.time_since_epoch() / clock_period;
@@ -1001,11 +1066,34 @@ long O3_CPU::retire_rob()
       // Update moving average latency
       avg_mem_latency = (1 - crisp_alpha) * avg_mem_latency + crisp_alpha * static_cast<double>(mem_latency_cycles);
 
+      // === CRISP Adaptive Threshold Tuning ===
+      if (crisp_enable) {
+        // Dynamically adjust latency threshold based on current avg latency
+        if (avg_mem_latency > 180) {
+          LATENCY_THRESHOLD = 200;        // system experiencing long memory latency
+        }
+        else if (avg_mem_latency < 100) {
+          LATENCY_THRESHOLD = 140;        // system running smooth; tighten CRISP
+        }
+        else {
+          LATENCY_THRESHOLD = 160;        // balanced zone
+        }
+
+        // Optional: adapt smoothing factor too
+        if (avg_mem_latency > 180)
+          crisp_alpha = 0.08;   // more responsive to latency spikes
+        else
+          crisp_alpha = 0.05;   // smoother, stable during calm phases
+
+        if (crisp_debug)
+          fmt::print("CPU{}: [ADAPT] avg_lat={:.1f} → LAT_THR={} α={:.3f}\n",
+            cpu, avg_mem_latency, LATENCY_THRESHOLD, crisp_alpha);
+      }
 
 
       if (crisp_debug)
         fmt::print("CPU{}: [RETIRE] id={} PC=0x{:x} latency={}cyc\n",
-                   cpu, rob_it->instr_id, rob_it->ip.to<uint64_t>(), mem_latency_cycles);
+          cpu, rob_it->instr_id, rob_it->ip.to<uint64_t>(), mem_latency_cycles);
 
       if (crisp_enable && mem_latency_cycles >= LATENCY_THRESHOLD)
       {
@@ -1033,6 +1121,7 @@ long O3_CPU::retire_rob()
   if (crisp_debug && retire_count > 0)
     fmt::print("CPU{}: [RETIRE] ✅ retired {}\n", cpu, retire_count);
 
+  
   return retire_count;
 }
 
@@ -1066,7 +1155,7 @@ void O3_CPU::print_deadlock()
   fmt::print("DEADLOCK! CPU {} cycle {}\n", cpu, current_time.time_since_epoch() / clock_period);
 
   auto instr_pack = [period = clock_period, this](const auto& entry) {
-    return std::tuple{entry.instr_id,
+    return std::tuple{ entry.instr_id,
                       entry.fetch_issued,
                       entry.fetch_completed,
                       entry.scheduled,
@@ -1074,10 +1163,10 @@ void O3_CPU::print_deadlock()
                       entry.completed,
                       reg_allocator.count_reg_dependencies(entry),
                       entry.num_mem_ops() - entry.completed_mem_ops,
-                      entry.ready_time.time_since_epoch() / period};
-  };
+                      entry.ready_time.time_since_epoch() / period };
+    };
   std::string_view instr_fmt{
-      "instr_id: {} fetch_issued: {} fetch_completed: {} scheduled: {} executed: {} completed: {} num_reg_dependent: {} num_mem_ops: {} event: {}"};
+      "instr_id: {} fetch_issued: {} fetch_completed: {} scheduled: {} executed: {} completed: {} num_reg_dependent: {} num_mem_ops: {} event: {}" };
   champsim::range_print_deadlock(IFETCH_BUFFER, "cpu" + std::to_string(cpu) + "_IFETCH", instr_fmt, instr_pack);
   champsim::range_print_deadlock(DECODE_BUFFER, "cpu" + std::to_string(cpu) + "_DECODE", instr_fmt, instr_pack);
   champsim::range_print_deadlock(DISPATCH_BUFFER, "cpu" + std::to_string(cpu) + "_DISPATCH", instr_fmt, instr_pack);
@@ -1088,28 +1177,28 @@ void O3_CPU::print_deadlock()
 
   // print LQ entry
   auto lq_pack = [period = clock_period](const auto& entry) {
-    std::string depend_id{"-"};
+    std::string depend_id{ "-" };
     if (entry->producer_id != std::numeric_limits<uint64_t>::max()) {
       depend_id = std::to_string(entry->producer_id);
     }
-    return std::tuple{entry->instr_id, entry->virtual_address, entry->fetch_issued, entry->ready_time.time_since_epoch() / period, depend_id};
-  };
-  std::string_view lq_fmt{"instr_id: {} address: {} fetch_issued: {} event_cycle: {} waits on {}"};
+    return std::tuple{ entry->instr_id, entry->virtual_address, entry->fetch_issued, entry->ready_time.time_since_epoch() / period, depend_id };
+    };
+  std::string_view lq_fmt{ "instr_id: {} address: {} fetch_issued: {} event_cycle: {} waits on {}" };
 
   auto sq_pack = [period = clock_period](const auto& entry) {
     std::vector<uint64_t> depend_ids;
     std::transform(std::begin(entry.lq_depend_on_me), std::end(entry.lq_depend_on_me), std::back_inserter(depend_ids),
-                   [](const std::optional<LSQ_ENTRY>& lq_entry) { return lq_entry->producer_id; });
-    return std::tuple{entry.instr_id, entry.virtual_address, entry.fetch_issued, entry.ready_time.time_since_epoch() / period, depend_ids};
-  };
-  std::string_view sq_fmt{"instr_id: {} address: {} fetch_issued: {} event_cycle: {} LQ waiting: {}"};
+      [](const std::optional<LSQ_ENTRY>& lq_entry) { return lq_entry->producer_id; });
+    return std::tuple{ entry.instr_id, entry.virtual_address, entry.fetch_issued, entry.ready_time.time_since_epoch() / period, depend_ids };
+    };
+  std::string_view sq_fmt{ "instr_id: {} address: {} fetch_issued: {} event_cycle: {} LQ waiting: {}" };
   champsim::range_print_deadlock(LQ, "cpu" + std::to_string(cpu) + "_LQ", lq_fmt, lq_pack);
   champsim::range_print_deadlock(SQ, "cpu" + std::to_string(cpu) + "_SQ", sq_fmt, sq_pack);
 }
 // LCOV_EXCL_STOP
 
 LSQ_ENTRY::LSQ_ENTRY(champsim::address addr, champsim::program_ordered<LSQ_ENTRY>::id_type id, champsim::address local_ip, std::array<uint8_t, 2> local_asid)
-    : champsim::program_ordered<LSQ_ENTRY>{id}, virtual_address(addr), ip(local_ip), asid(local_asid)
+  : champsim::program_ordered<LSQ_ENTRY>{ id }, virtual_address(addr), ip(local_ip), asid(local_asid)
 {
 }
 
@@ -1139,7 +1228,7 @@ void LSQ_ENTRY::finish(ooo_model_instr& rob_entry) const
 
   if constexpr (champsim::debug_print) {
     fmt::print("[LSQ] {} instr_id: {} full_address: {} remain_mem_ops: {}\n", __func__, instr_id, virtual_address,
-               rob_entry.num_mem_ops() - rob_entry.completed_mem_ops);
+      rob_entry.num_mem_ops() - rob_entry.completed_mem_ops);
   }
 }
 
@@ -1171,8 +1260,8 @@ bool CacheBus::issue_write(request_type data_packet)
 
 void O3_CPU::log_crisp(const std::string& msg) const
 {
-    if (crisp_debug)
-        fmt::print("CPU{} [CRISP] {}\n", cpu, msg);
+  if (crisp_debug)
+    fmt::print("CPU{} [CRISP] {}\n", cpu, msg);
 }
 
 /**
@@ -1181,73 +1270,73 @@ void O3_CPU::log_crisp(const std::string& msg) const
  */
 void O3_CPU::build_slice_and_mark_critical(uint64_t pc, uint64_t instr_id)
 {
-    if (!crisp_enable) return;
+  if (!crisp_enable) return;
 
-    auto it = recent_instrs.find(instr_id);
-    if (it == recent_instrs.end()) return;
+  auto it = recent_instrs.find(instr_id);
+  if (it == recent_instrs.end()) return;
 
-    std::unordered_set<uint64_t> visited;
-    std::deque<uint64_t> queue;
-    std::vector<uint64_t> slice_ids;
-    slice_ids.reserve(MAX_SLICE_DEPTH);
+  std::unordered_set<uint64_t> visited;
+  std::deque<uint64_t> queue;
+  std::vector<uint64_t> slice_ids;
+  slice_ids.reserve(MAX_SLICE_DEPTH);
 
-    queue.push_back(instr_id);
-    visited.insert(instr_id);
+  queue.push_back(instr_id);
+  visited.insert(instr_id);
 
-    while (!queue.empty() && slice_ids.size() < MAX_SLICE_DEPTH) {
-        uint64_t cur = queue.front();
-        queue.pop_front();
+  while (!queue.empty() && slice_ids.size() < MAX_SLICE_DEPTH) {
+    uint64_t cur = queue.front();
+    queue.pop_front();
 
-        auto rit = recent_instrs.find(cur);
-        if (rit == recent_instrs.end() || !rit->second)
-            continue;
+    auto rit = recent_instrs.find(cur);
+    if (rit == recent_instrs.end() || !rit->second)
+      continue;
 
-        ooo_model_instr* instr = rit->second;
-        if (!instr->is_critical) {
-            instr->is_critical = true;
-            slice_ids.push_back(instr->instr_id);
-        }
-
-        // enqueue all predecessors
-        for (size_t i = 0; i < instr->pred_count && i < ooo_model_instr::MAX_PREDS; ++i) {
-            uint64_t pred = instr->pred_instr_ids[i];
-            if (pred && !visited.count(pred)) {
-                visited.insert(pred);
-                queue.push_back(pred);
-            }
-        }
+    ooo_model_instr* instr = rit->second;
+    if (!instr->is_critical) {
+      instr->is_critical = true;
+      slice_ids.push_back(instr->instr_id);
     }
 
-    // record slice metadata
-    SliceEntry se;
-    se.load_pc = pc;
-    se.last_seen_cycle = current_time.time_since_epoch() / clock_period;
-    se.slice_instr_ids = std::move(slice_ids);
-    se.confidence = 1;
-
-    // Persist slice & mark PC as critical so future dispatches mark new instances
-    critical_slice_table[pc] = std::move(se);
-    critical_pc_table[pc] = true;
-
-    // Update statistics: how many instructions we newly marked critical
-    // Note: critical_slice_table[pc].slice_instr_ids.size() equals the number we set.
-    stat_crisp_marked += critical_slice_table[pc].slice_instr_ids.size();
-
-    if (crisp_debug) {
-        fmt::print("CPU{}: [CRISP] Built slice for PC=0x{:x} ({} instrs)\n",
-                   cpu, pc, critical_slice_table[pc].slice_instr_ids.size());
-        fmt::print("CPU{} [CRISP] marked={} scheduled={}\n", cpu, stat_crisp_marked, stat_crisp_scheduled);
+    // enqueue all predecessors
+    for (size_t i = 0; i < instr->pred_count && i < ooo_model_instr::MAX_PREDS; ++i) {
+      uint64_t pred = instr->pred_instr_ids[i];
+      if (pred && !visited.count(pred)) {
+        visited.insert(pred);
+        queue.push_back(pred);
+      }
     }
+  }
+
+  // record slice metadata
+  SliceEntry se;
+  se.load_pc = pc;
+  se.last_seen_cycle = current_time.time_since_epoch() / clock_period;
+  se.slice_instr_ids = std::move(slice_ids);
+  se.confidence = 1;
+
+  // Persist slice & mark PC as critical so future dispatches mark new instances
+  critical_slice_table[pc] = std::move(se);
+  critical_pc_table[pc] = true;
+
+  // Update statistics: how many instructions we newly marked critical
+  // Note: critical_slice_table[pc].slice_instr_ids.size() equals the number we set.
+  stat_crisp_marked += critical_slice_table[pc].slice_instr_ids.size();
+
+  if (crisp_debug) {
+    fmt::print("CPU{}: [CRISP] Built slice for PC=0x{:x} ({} instrs)\n",
+      cpu, pc, critical_slice_table[pc].slice_instr_ids.size());
+    fmt::print("CPU{} [CRISP] marked={} scheduled={}\n", cpu, stat_crisp_marked, stat_crisp_scheduled);
+  }
 }
 
 
 void O3_CPU::print_crisp_stats() const
 {
-    if (!crisp_enable) return;
+  if (!crisp_enable) return;
 
-    fmt::print("=== [CPU{} CRISP Summary] ===\n", cpu);
-    fmt::print("  Critical Loads Triggered : {}\n", stat_crisp_critical_loads);
-    fmt::print("  Instructions Marked      : {}\n", stat_crisp_marked);
-    fmt::print("  Criticals Scheduled      : {}\n", stat_crisp_scheduled);
-    fmt::print("==============================\n");
+  fmt::print("=== [CPU{} CRISP Summary] ===\n", cpu);
+  fmt::print("  Critical Loads Triggered : {}\n", stat_crisp_critical_loads);
+  fmt::print("  Instructions Marked      : {}\n", stat_crisp_marked);
+  fmt::print("  Criticals Scheduled      : {}\n", stat_crisp_scheduled);
+  fmt::print("==============================\n");
 }
