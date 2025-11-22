@@ -68,18 +68,26 @@ public:
 struct LSQ_ENTRY : champsim::program_ordered<LSQ_ENTRY> {
   champsim::address virtual_address{};
   champsim::address ip{};
-  champsim::chrono::clock::time_point ready_time{champsim::chrono::clock::time_point::max()};
-
-  std::array<uint8_t, 2> asid = {std::numeric_limits<uint8_t>::max(), std::numeric_limits<uint8_t>::max()};
+  std::array<uint8_t, 2> asid = {
+      std::numeric_limits<uint8_t>::max(),
+      std::numeric_limits<uint8_t>::max()
+  };
+  champsim::chrono::clock::time_point ready_time{
+      champsim::chrono::clock::time_point::max()
+  };
   bool fetch_issued = false;
-
   uint64_t producer_id = std::numeric_limits<uint64_t>::max();
   std::vector<std::reference_wrapper<std::optional<LSQ_ENTRY>>> lq_depend_on_me{};
 
-  LSQ_ENTRY(champsim::address addr, champsim::program_ordered<LSQ_ENTRY>::id_type id, champsim::address ip, std::array<uint8_t, 2> asid);
+  LSQ_ENTRY(champsim::address addr,
+            champsim::program_ordered<LSQ_ENTRY>::id_type id,
+            champsim::address ip,
+            std::array<uint8_t, 2> asid);
   void finish(ooo_model_instr& rob_entry) const;
-  void finish(std::deque<ooo_model_instr>::iterator begin, std::deque<ooo_model_instr>::iterator end) const;
+  void finish(std::deque<ooo_model_instr>::iterator begin,
+              std::deque<ooo_model_instr>::iterator end) const;
 };
+
 
 // cpu
 class O3_CPU : public champsim::operable
@@ -87,10 +95,52 @@ class O3_CPU : public champsim::operable
 public:
   uint32_t cpu = 0;
 
-  // Delinquent Load Table (DLT)
-  std::map<champsim::address, uint32_t> delinquent_load_table; // Maps PC (ip) to miss_count
-  const uint64_t MISS_LATENCY_THRESHOLD_CYCLES = 100; // 100 cycles = approx LLC miss
-  const uint32_t CRITICAL_COUNTER_THRESHOLD = 10;   // Mark as critical after 10+ misses
+    /* =====================  CRISP EXTENSIONS  ===================== */
+
+  // ---- global CRISP switch & debug flag ----
+  bool crisp_enable = true;           // set false to disable logic quickly
+  bool crisp_debug  = false;          // toggle verbose logs
+
+  // === CRISP statistics ===
+  uint64_t stat_crisp_marked = 0;         // total number of instructions marked critical
+  uint64_t stat_crisp_scheduled = 0;      // total number of critical instructions scheduled
+  uint64_t stat_crisp_critical_loads = 0; // number of loads triggering slice build
+  // === end CRISP statistics ===
+
+  // === CRISP dynamic adaptation ===
+  double avg_mem_latency = 0.0;
+  double crisp_alpha = 0.08; // smoothing factor for moving average
+
+  // ---- delinquent-load & slice tracking ----
+  struct SliceEntry {
+      uint64_t load_pc = 0;
+      uint64_t last_addr = 0;
+      std::vector<uint64_t> slice_instr_ids;
+      uint32_t confidence = 0;
+      uint64_t last_seen_cycle = 0;
+  };
+
+  // identify instruction → producer map and slice tables
+  std::vector<uint64_t> last_writer;                            // reg → last writer instr_id
+  std::unordered_map<uint64_t, ooo_model_instr*> recent_instrs; // inflight map
+  std::unordered_map<uint64_t, SliceEntry> critical_slice_table;// PC→slice
+  std::unordered_map<uint64_t, bool> critical_pc_table;         // PC→true if known critical
+  std::unordered_map<uint64_t, uint64_t> last_addr_by_pc;       // PC→last accessed addr
+
+  // ---- tuning constants ----
+  uint64_t MISS_LATENCY_THRESHOLD = 60;   // cycles
+  uint64_t LATENCY_THRESHOLD = 120;        // mark critical
+  static constexpr size_t   CST_MAX_ENTRIES = 512;
+  static constexpr size_t   MAX_SLICE_DEPTH = 32;
+
+  // ---- helper prototypes (implemented in .cc) ----
+  void build_slice_and_mark_critical(uint64_t pc, uint64_t instr_id);
+  void log_crisp(const std::string& msg) const;
+  void print_crisp_stats() const;   // optional summary print helper
+
+  /* =====================  end CRISP EXTENSIONS  ===================== */
+
+
 
   // cycle
   champsim::chrono::clock::time_point begin_phase_time{};
