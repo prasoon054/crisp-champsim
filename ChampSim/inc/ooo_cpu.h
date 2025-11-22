@@ -97,7 +97,7 @@ public:
 
   // ---- global CRISP switch & debug flag ----
   bool crisp_enable = true;           // set false to disable logic quickly
-  bool crisp_debug  = false;          // toggle verbose logs
+  bool crisp_debug  = false;          // toggle verbose logs (KEEP FALSE for production runs)
 
   // === CRISP statistics ===
   uint64_t stat_crisp_marked = 0;         // total number of instructions marked critical
@@ -107,7 +107,7 @@ public:
 
   // === CRISP dynamic adaptation ===
   double avg_mem_latency = 0.0;
-  double crisp_alpha = 0.08; // smoothing factor for moving average
+  double crisp_alpha = 0.3; // smoothing factor for moving average
 
   // ---- delinquent-load & slice tracking ----
   struct SliceEntry {
@@ -127,7 +127,7 @@ public:
 
   // ---- tuning constants ----
   uint64_t MISS_LATENCY_THRESHOLD = 60;   // cycles
-  uint64_t LATENCY_THRESHOLD = 120;        // mark critical
+  uint64_t LATENCY_THRESHOLD = 100;        // mark critical (lowered from 120 for better coverage)
   static constexpr size_t   CST_MAX_ENTRIES = 512;
   static constexpr size_t   MAX_SLICE_DEPTH = 32;
 

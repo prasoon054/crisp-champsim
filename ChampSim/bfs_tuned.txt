@@ -7,26 +7,26 @@ Number of CPUs: 1
 Page size: 4096
 
 Off-chip DRAM Size: 16 GiB Channels: 1 Width: 64-bit Data Rate: 2403 MT/s
-Heartbeat CPU 0 instructions: 10000002 cycles: 3640533 heartbeat IPC: 2.747 cumulative IPC: 2.747 (Simulation time: 00 hr 00 min 26 sec)
+Heartbeat CPU 0 instructions: 10000002 cycles: 3640533 heartbeat IPC: 2.747 cumulative IPC: 2.747 (Simulation time: 00 hr 00 min 27 sec)
 === [CPU0 CRISP Summary] ===
   Critical Loads Triggered : 0
   Instructions Marked      : 0
   Criticals Scheduled      : 0
 ==============================
-Warmup finished CPU 0 instructions: 20000001 cycles: 9203927 cumulative IPC: 2.173 (Simulation time: 00 hr 01 min 02 sec)
-Warmup complete CPU 0 instructions: 20000001 cycles: 9203927 cumulative IPC: 2.173 (Simulation time: 00 hr 01 min 02 sec)
-Heartbeat CPU 0 instructions: 20000007 cycles: 9203928 heartbeat IPC: 1.797 cumulative IPC: 6 (Simulation time: 00 hr 01 min 02 sec)
-Heartbeat CPU 0 instructions: 30000007 cycles: 63499531 heartbeat IPC: 0.1842 cumulative IPC: 0.1842 (Simulation time: 00 hr 03 min 20 sec)
-Heartbeat CPU 0 instructions: 40000007 cycles: 120783761 heartbeat IPC: 0.1746 cumulative IPC: 0.1792 (Simulation time: 00 hr 05 min 44 sec)
-Heartbeat CPU 0 instructions: 50000008 cycles: 189123084 heartbeat IPC: 0.1463 cumulative IPC: 0.1667 (Simulation time: 00 hr 08 min 39 sec)
-Heartbeat CPU 0 instructions: 60000010 cycles: 238044165 heartbeat IPC: 0.2044 cumulative IPC: 0.1748 (Simulation time: 00 hr 10 min 41 sec)
+Warmup finished CPU 0 instructions: 20000001 cycles: 9203927 cumulative IPC: 2.173 (Simulation time: 00 hr 01 min 04 sec)
+Warmup complete CPU 0 instructions: 20000001 cycles: 9203927 cumulative IPC: 2.173 (Simulation time: 00 hr 01 min 04 sec)
+Heartbeat CPU 0 instructions: 20000007 cycles: 9203928 heartbeat IPC: 1.797 cumulative IPC: 6 (Simulation time: 00 hr 01 min 04 sec)
+Heartbeat CPU 0 instructions: 30000007 cycles: 63499531 heartbeat IPC: 0.1842 cumulative IPC: 0.1842 (Simulation time: 00 hr 03 min 23 sec)
+Heartbeat CPU 0 instructions: 40000007 cycles: 120783761 heartbeat IPC: 0.1746 cumulative IPC: 0.1792 (Simulation time: 00 hr 05 min 55 sec)
+Heartbeat CPU 0 instructions: 50000008 cycles: 189123084 heartbeat IPC: 0.1463 cumulative IPC: 0.1667 (Simulation time: 00 hr 09 min 21 sec)
+Heartbeat CPU 0 instructions: 60000010 cycles: 238044165 heartbeat IPC: 0.2044 cumulative IPC: 0.1748 (Simulation time: 00 hr 11 min 29 sec)
 === [CPU0 CRISP Summary] ===
-  Critical Loads Triggered : 537203
-  Instructions Marked      : 209071
-  Criticals Scheduled      : 11656074
+  Critical Loads Triggered : 543467
+  Instructions Marked      : 211190
+  Criticals Scheduled      : 11656080
 ==============================
-Simulation finished CPU 0 instructions: 50000001 cycles: 231694524 cumulative IPC: 0.2158 (Simulation time: 00 hr 11 min 00 sec)
-Simulation complete CPU 0 instructions: 50000001 cycles: 231694524 cumulative IPC: 0.2158 (Simulation time: 00 hr 11 min 00 sec)
+Simulation finished CPU 0 instructions: 50000001 cycles: 231694524 cumulative IPC: 0.2158 (Simulation time: 00 hr 11 min 48 sec)
+Simulation complete CPU 0 instructions: 50000001 cycles: 231694524 cumulative IPC: 0.2158 (Simulation time: 00 hr 11 min 48 sec)
 
 ChampSim completed all CPUs
 

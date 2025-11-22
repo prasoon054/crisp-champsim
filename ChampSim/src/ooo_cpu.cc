@@ -1069,21 +1069,21 @@ long O3_CPU::retire_rob()
       // === CRISP Adaptive Threshold Tuning ===
       if (crisp_enable) {
         // Dynamically adjust latency threshold based on current avg latency
-        if (avg_mem_latency > 180) {
-          LATENCY_THRESHOLD = 200;        // system experiencing long memory latency
+        if (avg_mem_latency > 160) {
+          LATENCY_THRESHOLD = 140;        // system experiencing long memory latency
         }
-        else if (avg_mem_latency < 100) {
-          LATENCY_THRESHOLD = 140;        // system running smooth; tighten CRISP
+        else if (avg_mem_latency < 90) {
+          LATENCY_THRESHOLD = 90;         // system running smooth; keep moderate CRISP
         }
         else {
-          LATENCY_THRESHOLD = 160;        // balanced zone
+          LATENCY_THRESHOLD = 115;        // balanced zone
         }
 
         // Optional: adapt smoothing factor too
-        if (avg_mem_latency > 180)
-          crisp_alpha = 0.08;   // more responsive to latency spikes
+        if (avg_mem_latency > 160)
+          crisp_alpha = 0.10;   // more responsive to latency spikes
         else
-          crisp_alpha = 0.05;   // smoother, stable during calm phases
+          crisp_alpha = 0.06;   // smoother, stable during calm phases
 
         if (crisp_debug)
           fmt::print("CPU{}: [ADAPT] avg_lat={:.1f} → LAT_THR={} α={:.3f}\n",
