@@ -24,7 +24,7 @@
 #include <limits>
 #include <string_view>
 #include <vector>
-#include <unordered_set>   // ✅ needed for CRISP slice visited set
+#include <unordered_set>  
 
 #include "address.h"
 #include "champsim.h"
