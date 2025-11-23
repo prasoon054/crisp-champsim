@@ -95,23 +95,23 @@ class O3_CPU : public champsim::operable
 public:
   uint32_t cpu = 0;
 
-    /* =====================  CRISP EXTENSIONS  ===================== */
+  // CRISP EXTENSIONS
 
-  // ---- global CRISP switch & debug flag ----
-  bool crisp_enable = true;           // set false to disable logic quickly
-  bool crisp_debug  = false;          // toggle verbose logs (KEEP FALSE for production runs)
+  // global CRISP switch & debug flag
+  bool crisp_enable = true; // set false to disable logic quickly
+  bool crisp_debug  = false; // toggle verbose logs (KEEP FALSE for production runs)
 
-  // === CRISP statistics ===
+  // CRISP statistics
   uint64_t stat_crisp_marked = 0;         // total number of instructions marked critical
   uint64_t stat_crisp_scheduled = 0;      // total number of critical instructions scheduled
   uint64_t stat_crisp_critical_loads = 0; // number of loads triggering slice build
-  // === end CRISP statistics ===
+  // end CRISP statistics
 
-  // === CRISP dynamic adaptation ===
+  // CRISP dynamic adaptation
   double avg_mem_latency = 0.0;
   double crisp_alpha = 0.3; // smoothing factor for moving average
 
-  // ---- delinquent-load & slice tracking ----
+  // delinquent-load & slice tracking
   struct SliceEntry {
       uint64_t load_pc = 0;
       uint64_t last_addr = 0;
@@ -120,25 +120,25 @@ public:
       uint64_t last_seen_cycle = 0;
   };
 
-  // identify instruction → producer map and slice tables
-  std::vector<uint64_t> last_writer;                            // reg → last writer instr_id
+  // identify instruction, producer map and slice tables
+  std::vector<uint64_t> last_writer; // reg,last writer instr_id
   std::unordered_map<uint64_t, ooo_model_instr*> recent_instrs; // inflight map
-  std::unordered_map<uint64_t, SliceEntry> critical_slice_table;// PC→slice
-  std::unordered_map<uint64_t, bool> critical_pc_table;         // PC→true if known critical
-  std::unordered_map<uint64_t, uint64_t> last_addr_by_pc;       // PC→last accessed addr
+  std::unordered_map<uint64_t, SliceEntry> critical_slice_table; // PC:slice
+  std::unordered_map<uint64_t, bool> critical_pc_table; // PC:true if known critical
+  std::unordered_map<uint64_t, uint64_t> last_addr_by_pc; // PC:last accessed addr
 
-  // ---- tuning constants ----
-  uint64_t MISS_LATENCY_THRESHOLD = 60;   // cycles
-  uint64_t LATENCY_THRESHOLD = 100;        // mark critical (lowered from 120 for better coverage)
+  // tuning constants
+  uint64_t MISS_LATENCY_THRESHOLD = 60; // cycles
+  uint64_t LATENCY_THRESHOLD = 100; // mark critical
   static constexpr size_t   CST_MAX_ENTRIES = 512;
   static constexpr size_t   MAX_SLICE_DEPTH = 32;
 
-  // ---- helper prototypes (implemented in .cc) ----
+  // helper prototypes (implemented in .cc)
   void build_slice_and_mark_critical(uint64_t pc, uint64_t instr_id);
   void log_crisp(const std::string& msg) const;
-  void print_crisp_stats() const;   // optional summary print helper
+  void print_crisp_stats() const;   // summary print helper
 
-  /* =====================  end CRISP EXTENSIONS  ===================== */
+  // end CRISP EXTENSIONS
 
 
 

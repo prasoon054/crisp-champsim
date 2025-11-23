@@ -79,7 +79,7 @@ void O3_CPU::initialize()
 
   impl_initialize_branch_predictor();
   impl_initialize_btb();
-  // --- CRISP initialization ---
+  // CRISP initialization
   if (crisp_enable) {
     last_writer.assign(REGISTER_FILE_SIZE, 0);
     recent_instrs.clear();
@@ -90,7 +90,7 @@ void O3_CPU::initialize()
       fmt::print("CPU{}: [CRISP] initialized tables ({} regs)\n",
         cpu, REGISTER_FILE_SIZE);
   }
-  // --- end CRISP init ---
+  // end CRISP init
 
 
 }
@@ -425,28 +425,6 @@ long O3_CPU::decode_instruction()
 
 void O3_CPU::do_dib_update(const ooo_model_instr& instr) { DIB.fill(instr.ip); }
 
-//Original
-// long O3_CPU::dispatch_instruction()
-// {
-//   champsim::bandwidth available_dispatch_bandwidth{DISPATCH_WIDTH};
-
-//   // dispatch DISPATCH_WIDTH instructions into the ROB
-//   while (available_dispatch_bandwidth.has_remaining() && !std::empty(DISPATCH_BUFFER) && DISPATCH_BUFFER.front().ready_time <= current_time
-//          && std::size(ROB) != ROB_SIZE
-//          && ((std::size_t)std::count_if(std::begin(LQ), std::end(LQ), [](const auto& lq_entry) { return !lq_entry.has_value(); })
-//              >= std::size(DISPATCH_BUFFER.front().source_memory))
-//          && ((std::size(DISPATCH_BUFFER.front().destination_memory) + std::size(SQ)) <= SQ_SIZE)) {
-//     ROB.push_back(std::move(DISPATCH_BUFFER.front()));
-//     DISPATCH_BUFFER.pop_front();
-//     do_memory_scheduling(ROB.back());
-
-//     available_dispatch_bandwidth.consume();
-//     ROB.back().ready_time = current_time + (warmup ? champsim::chrono::clock::duration{} : SCHEDULING_LATENCY);
-//   }
-
-//   return available_dispatch_bandwidth.amount_consumed();
-// }
-
 long O3_CPU::dispatch_instruction()
 {
     champsim::bandwidth available_dispatch_bandwidth{DISPATCH_WIDTH};
@@ -460,7 +438,7 @@ long O3_CPU::dispatch_instruction()
         auto instr = std::move(DISPATCH_BUFFER.front());
         DISPATCH_BUFFER.pop_front();
 
-        // ✅ Check LQ space if this is a load
+        // Check LQ space if this is a load
         if (!instr.source_memory.empty()) {
             size_t loads_needed = instr.source_memory.size();
             size_t free_lq = std::count_if(LQ.begin(), LQ.end(), [](const auto& e) { return !e.has_value(); });
@@ -471,14 +449,14 @@ long O3_CPU::dispatch_instruction()
             }
         }
 
-        // ✅ Check SQ space if this is a store
+        // Check SQ space if this is a store
         if ((instr.destination_memory.size() + SQ.size()) > SQ_SIZE) {
             instr.ready_time = current_time + clock_period;
             DISPATCH_BUFFER.push_front(std::move(instr));
             break;
         }
 
-        // ✅ Check register availability for destination operands
+        // Check register availability for destination operands
         const auto free_regs = reg_allocator.count_free_registers();
         const size_t dests_to_alloc = std::count_if(instr.destination_registers.begin(),
                                                      instr.destination_registers.end(),
@@ -502,14 +480,14 @@ long O3_CPU::dispatch_instruction()
             if (critical_pc_table.find(pc) != critical_pc_table.end()) {
                 rob_instr.is_critical = true;
                 if (crisp_debug)
-                    fmt::print("CPU{}: [CRISP] 🚩 Marked new instance as critical: PC=0x{:x} ID={}\n",
+                    fmt::print("CPU{}: [CRISP] Marked new instance as critical: PC=0x{:x} ID={}\n",
                                cpu, pc, rob_instr.instr_id);
             }
         }
 
         rob_instr.dispatch_cycle = current_time.time_since_epoch() / clock_period;
 
-        // ---- CRISP dependency tracking ----
+        // -CRISP dependency tracking
         if (crisp_enable) {
             rob_instr.pred_count = 0;
             for (auto src : rob_instr.source_registers) {
@@ -526,7 +504,7 @@ long O3_CPU::dispatch_instruction()
             recent_instrs[rob_instr.instr_id] = &rob_instr;
         }
 
-        // ---- Memory scheduling ----
+        // Memory scheduling
         do_memory_scheduling(rob_instr);
 
         available_dispatch_bandwidth.consume();
@@ -564,22 +542,6 @@ long O3_CPU::schedule_instruction()
   return progress;
 }
 
-// void O3_CPU::do_scheduling(ooo_model_instr& instr)
-// {
-//   // Mark register dependencies
-//   for (auto& src_reg : instr.source_registers) {
-//     // rename source register
-//     src_reg = reg_allocator.rename_src_register(src_reg);
-//   }
-
-//   for (auto& dreg : instr.destination_registers) {
-//     // rename destination register
-//     dreg = reg_allocator.rename_dest_register(dreg, instr.instr_id);
-//   }
-
-//   instr.scheduled = true;
-// }
-
 void O3_CPU::do_scheduling(ooo_model_instr& instr)
 {
   // Mark register dependencies
@@ -595,24 +557,6 @@ void O3_CPU::do_scheduling(ooo_model_instr& instr)
 
   instr.scheduled = true;
 }
-
-
-// long O3_CPU::execute_instruction()
-// {
-//   champsim::bandwidth exec_bw{EXEC_WIDTH};
-//   for (auto rob_it = std::begin(ROB); rob_it != std::end(ROB) && exec_bw.has_remaining(); ++rob_it) {
-//     if (rob_it->scheduled && !rob_it->executed && rob_it->ready_time <= current_time) {
-//       bool ready = std::all_of(std::begin(rob_it->source_registers), std::end(rob_it->source_registers),
-//                                [&alloc = std::as_const(reg_allocator)](auto srcreg) { return alloc.isValid(srcreg); });
-//       if (ready) {
-//         do_execution(*rob_it);
-//         exec_bw.consume();
-//       }
-//     }
-//   }
-
-//   return exec_bw.amount_consumed();
-// }
 
 long O3_CPU::execute_instruction()
 {
@@ -630,9 +574,7 @@ long O3_CPU::execute_instruction()
             });
     };
 
-    // ===========================================
     // STEP 1: ROB Head Guarantee (Liveness)
-    // ===========================================
     auto& rob_head = ROB.front();
     if (rob_head.scheduled &&!rob_head.executed && rob_head.ready_time <= current_time) {
         if (dependency_check(rob_head)) {
@@ -644,19 +586,16 @@ long O3_CPU::execute_instruction()
                 ++stat_crisp_scheduled; // Count if ROB head was critical
 
             if (crisp_debug)
-                fmt::print("CPU{}: [EXEC] 🚀 Executed ROB head id={} (guaranteed progress)\n",
+                fmt::print("CPU{}: [EXEC] Executed ROB head id={} (guaranteed progress)\n",
                            cpu, rob_head.instr_id);
         } else {
             if (crisp_debug)
-                fmt::print("CPU{}: ⚠️ ROB head {} blocked on source regs\n",
+                fmt::print("CPU{}: ROB head {} blocked on source regs\n",
                            cpu, rob_head.instr_id);
         }
     }
 
-    // ===========================================
     // STEP 2: Build Ready Lists for the rest of the ROB
-    // ===========================================
-    
     // These lists store iterators to the ready instructions in the ROB
     std::vector<std::deque<ooo_model_instr>::iterator> ready_criticals;
     std::vector<std::deque<ooo_model_instr>::iterator> ready_non_criticals;
@@ -676,10 +615,7 @@ long O3_CPU::execute_instruction()
         }
     }
 
-    // ===========================================
     // STEP 3: Issue from Ready Lists (CRISP Prioritization)
-    // ===========================================
-
     // Issue all ready critical instructions first
     for (auto& ready_instr_it : ready_criticals)
     {
@@ -692,7 +628,7 @@ long O3_CPU::execute_instruction()
         ++stat_crisp_scheduled; // Count scheduled criticals
 
         if (crisp_debug)
-            fmt::print("CPU{}: [EXEC] ⚡ Executed critical id={} PC=0x{:x}\n",
+            fmt::print("CPU{}: [EXEC] Executed critical id={} PC=0x{:x}\n",
                        cpu, ready_instr_it->instr_id, ready_instr_it->ip.to<uint64_t>());
     }
 
@@ -709,6 +645,7 @@ long O3_CPU::execute_instruction()
 
     return progress;
 }
+
 void O3_CPU::do_execution(ooo_model_instr& instr)
 {
   instr.executed = true;
@@ -779,45 +716,6 @@ void O3_CPU::do_memory_scheduling(ooo_model_instr& instr)
       std::size(instr.destination_memory), current_time.time_since_epoch() / clock_period);
   }
 }
-
-// long O3_CPU::operate_lsq()
-// {
-//   champsim::bandwidth store_bw{SQ_WIDTH};
-
-//   const auto complete_id = std::empty(ROB) ? std::numeric_limits<uint64_t>::max() : ROB.front().instr_id;
-//   auto do_complete = [time = current_time, finished = LSQ_ENTRY::precedes(complete_id), this](const auto& x) {
-//     return finished(x) && x.ready_time <= time && this->do_complete_store(x);
-//   };
-
-//   auto unfetched_begin = std::partition_point(std::begin(SQ), std::end(SQ), [](const auto& x) { return x.fetch_issued; });
-//   auto [fetch_begin, fetch_end] =
-//       champsim::get_span_p(unfetched_begin, std::end(SQ), store_bw, [time = current_time](const auto& x) { return !x.fetch_issued && x.ready_time <= time; });
-//   store_bw.consume(std::distance(fetch_begin, fetch_end));
-//   std::for_each(fetch_begin, fetch_end, [time = current_time, this](auto& sq_entry) {
-//     this->do_finish_store(sq_entry);
-//     sq_entry.fetch_issued = true;
-//     sq_entry.ready_time = time;
-//   });
-
-//   auto [complete_begin, complete_end] = champsim::get_span_p(std::cbegin(SQ), std::cend(SQ), store_bw, do_complete);
-//   store_bw.consume(std::distance(complete_begin, complete_end));
-//   SQ.erase(complete_begin, complete_end);
-
-//   champsim::bandwidth load_bw{LQ_WIDTH};
-
-//   for (auto& lq_entry : LQ) {
-//     if (load_bw.has_remaining() && lq_entry.has_value() && lq_entry->producer_id == std::numeric_limits<uint64_t>::max() && !lq_entry->fetch_issued
-//         && lq_entry->ready_time < current_time) {
-//       auto success = execute_load(*lq_entry);
-//       if (success) {
-//         load_bw.consume();
-//         lq_entry->fetch_issued = true;
-//       }
-//     }
-//   }
-
-//   return store_bw.amount_consumed() + load_bw.amount_consumed();
-// }
 
 long O3_CPU::operate_lsq()
 {
@@ -899,20 +797,6 @@ bool O3_CPU::do_complete_store(const LSQ_ENTRY& sq_entry)
   return L1D_bus.issue_write(data_packet);
 }
 
-// bool O3_CPU::execute_load(const LSQ_ENTRY& lq_entry)
-// {
-//   CacheBus::request_type data_packet;
-//   data_packet.v_address = lq_entry.virtual_address;
-//   data_packet.instr_id = lq_entry.instr_id;
-//   data_packet.ip = lq_entry.ip;
-
-//   if constexpr (champsim::debug_print) {
-//     fmt::print("[LQ] {} instr_id: {} vaddr: {}\n", __func__, data_packet.instr_id, data_packet.v_address);
-//   }
-
-//   return L1D_bus.issue_read(data_packet);
-// }
-
 bool O3_CPU::execute_load(const LSQ_ENTRY& lq_entry)
 {
   CacheBus::request_type data_packet;
@@ -942,21 +826,6 @@ void O3_CPU::do_complete_execution(ooo_model_instr& instr)
     fetch_resume_time = current_time + BRANCH_MISPREDICT_PENALTY;
   }
 }
-
-// long O3_CPU::complete_inflight_instruction()
-// {
-//   // update ROB entries with completed executions
-//   champsim::bandwidth complete_bw{EXEC_WIDTH};
-//   for (auto rob_it = std::begin(ROB); rob_it != std::end(ROB) && complete_bw.has_remaining(); ++rob_it) {
-//     if (rob_it->executed && !rob_it->completed && (rob_it->ready_time <= current_time) && rob_it->completed_mem_ops == rob_it->num_mem_ops()) {
-//       do_complete_execution(*rob_it);
-//       complete_bw.consume();
-//     }
-//   }
-
-//   return complete_bw.amount_consumed();
-// }
-
 
 long O3_CPU::complete_inflight_instruction()
 {
@@ -1021,31 +890,6 @@ long O3_CPU::handle_memory_return()
   return progress;
 }
 
-// long O3_CPU::retire_rob()
-// {
-//   auto [retire_begin, retire_end] =
-//       champsim::get_span_p(std::cbegin(ROB), std::cend(ROB), champsim::bandwidth{RETIRE_WIDTH}, [](const auto& x) { return x.completed; });
-//   assert(std::distance(retire_begin, retire_end) >= 0); // end succeeds begin
-//   if constexpr (champsim::debug_print) {
-//     std::for_each(retire_begin, retire_end, [cycle = current_time.time_since_epoch() / clock_period](const auto& x) {
-//       fmt::print("[ROB] retire_rob instr_id: {} is retired cycle: {}\n", x.instr_id, cycle);
-//     });
-//   }
-
-//   // commit register writes to backend RAT
-//   // and recycle the old physical registers
-//   for (auto rob_it = retire_begin; rob_it != retire_end; ++rob_it) {
-//     for (auto dreg : rob_it->destination_registers) {
-//       reg_allocator.retire_dest_register(dreg);
-//     }
-//   }
-
-//   auto retire_count = std::distance(retire_begin, retire_end);
-//   num_retired += retire_count;
-//   ROB.erase(retire_begin, retire_end);
-
-//   return retire_count;
-// }
 long O3_CPU::retire_rob()
 {
   auto [retire_begin, retire_end] =
@@ -1066,27 +910,27 @@ long O3_CPU::retire_rob()
       // Update moving average latency
       avg_mem_latency = (1 - crisp_alpha) * avg_mem_latency + crisp_alpha * static_cast<double>(mem_latency_cycles);
 
-      // === CRISP Adaptive Threshold Tuning ===
+      // CRISP Adaptive Threshold Tuning
       if (crisp_enable) {
         // Dynamically adjust latency threshold based on current avg latency
         if (avg_mem_latency > 160) {
-          LATENCY_THRESHOLD = 140;        // system experiencing long memory latency
+          LATENCY_THRESHOLD = 140; // system experiencing long memory latency
         }
         else if (avg_mem_latency < 90) {
-          LATENCY_THRESHOLD = 90;         // system running smooth; keep moderate CRISP
+          LATENCY_THRESHOLD = 90; // system running smooth; keep moderate CRISP
         }
         else {
-          LATENCY_THRESHOLD = 115;        // balanced zone
+          LATENCY_THRESHOLD = 115; // balanced zone
         }
 
         // Optional: adapt smoothing factor too
         if (avg_mem_latency > 160)
-          crisp_alpha = 0.10;   // more responsive to latency spikes
+          crisp_alpha = 0.10; // more responsive to latency spikes
         else
-          crisp_alpha = 0.06;   // smoother, stable during calm phases
+          crisp_alpha = 0.06; // smoother, stable during calm phases
 
         if (crisp_debug)
-          fmt::print("CPU{}: [ADAPT] avg_lat={:.1f} → LAT_THR={} α={:.3f}\n",
+          fmt::print("CPU{}: [ADAPT] avg_lat={:.1f} : LAT_THR={} Alpha={:.3f}\n",
             cpu, avg_mem_latency, LATENCY_THRESHOLD, crisp_alpha);
       }
 
@@ -1101,7 +945,7 @@ long O3_CPU::retire_rob()
         build_slice_and_mark_critical(pc, rob_it->instr_id);
         stat_crisp_critical_loads++;
         if (crisp_debug)
-          fmt::print("CPU{}: [CRISP] 🔴 Critical slice started @PC=0x{:x}\n", cpu, pc);
+          fmt::print("CPU{}: [CRISP] Critical slice started @PC=0x{:x}\n", cpu, pc);
       }
     }
   }
@@ -1119,7 +963,7 @@ long O3_CPU::retire_rob()
   ROB.erase(retire_begin, retire_end);
 
   if (crisp_debug && retire_count > 0)
-    fmt::print("CPU{}: [RETIRE] ✅ retired {}\n", cpu, retire_count);
+    fmt::print("CPU{}: [RETIRE] retired {}\n", cpu, retire_count);
 
   
   return retire_count;
@@ -1202,16 +1046,6 @@ LSQ_ENTRY::LSQ_ENTRY(champsim::address addr, champsim::program_ordered<LSQ_ENTRY
 {
 }
 
-// LSQ_ENTRY::LSQ_ENTRY(champsim::address addr, champsim::program_ordered<LSQ_ENTRY>::id_type id, champsim::address local_ip, std::array<uint8_t, 2> local_asid)
-//     : champsim::program_ordered<LSQ_ENTRY>{id}, virtual_address(addr), ip(local_ip), asid(local_asid),
-//       ready_time(champsim::chrono::clock::time_point::max()),
-//       fetch_issued(false),
-//       producer_id(std::numeric_limits<uint64_t>::max())
-// {
-//     lq_depend_on_me.clear();
-// }
-
-
 void LSQ_ENTRY::finish(std::deque<ooo_model_instr>::iterator begin, std::deque<ooo_model_instr>::iterator end) const
 {
   auto rob_entry = std::partition_point(begin, end, ooo_model_instr::precedes(this->instr_id));
@@ -1253,21 +1087,15 @@ bool CacheBus::issue_write(request_type data_packet)
   return lower_level->add_wq(data_packet);
 }
 
-
-// ==========================================================
 //  CRISP helper functions
-// ==========================================================
-
 void O3_CPU::log_crisp(const std::string& msg) const
 {
   if (crisp_debug)
     fmt::print("CPU{} [CRISP] {}\n", cpu, msg);
 }
 
-/**
- * Build a simple backward slice for a high-latency load.
- * Marks the current and its producers as critical.
- */
+// Build a simple backward slice for a high-latency load.
+// Marks the current and its producers as critical.
 void O3_CPU::build_slice_and_mark_critical(uint64_t pc, uint64_t instr_id)
 {
   if (!crisp_enable) return;
@@ -1319,7 +1147,7 @@ void O3_CPU::build_slice_and_mark_critical(uint64_t pc, uint64_t instr_id)
   critical_pc_table[pc] = true;
 
   // Update statistics: how many instructions we newly marked critical
-  // Note: critical_slice_table[pc].slice_instr_ids.size() equals the number we set.
+  // critical_slice_table[pc].slice_instr_ids.size() equals the number we set.
   stat_crisp_marked += critical_slice_table[pc].slice_instr_ids.size();
 
   if (crisp_debug) {
